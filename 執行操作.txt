@@ -1,0 +1,30 @@
+環境建版本
+Package           Version
+----------------- -------
+asgiref           3.8.1
+bcrypt            4.3.0
+cffi              1.17.1
+cryptography      44.0.2
+Django            5.2       pip install django
+paramiko          3.5.1     pip install paramiko
+pip               25.0
+pycparser         2.22
+PyNaCl            1.5.0
+setuptools        75.8.0
+sqlparse          0.5.3
+typing_extensions 4.13.2
+
+# 背著而已
+python manage.py startapp blog ->建立應用(app)語法
+將 blog 加入到 mysite/settings.py 裡的 INSTALLED_APPS：
+INSTALLED_APPS = [
+    ...,
+    'blog',
+]
+
+# 執行
+進到live_demo資料夾裡
+
+終端機輸入 python manage.py runserver
+
+http://127.0.0.1:8000/

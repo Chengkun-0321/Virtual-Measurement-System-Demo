@@ -1,0 +1,20 @@
+使用python manage.py startapp blog自動產生
+
+blog作用「功能模組」
+
+blog/ 
+├── __pycache__/
+├── migrations/
+│   └── __init__.py
+├── templates/                  ←放這個app專用的HTML模板
+│   └── blog/
+│       ├── home.html
+│       └── run_mamba.html
+├── __init__.py
+├── admin.py                    ←將資料表註冊到後台管理
+├── apps.py                     ←註冊app的設定資料
+├── blog結構.txt
+├── models.py                   ←定義資料表結構（欄位、關聯）
+├── tests.py    
+├── urls.py                     ←定義這個app的網址路徑
+├── views.py                    ←寫畫面邏輯（回傳HTML、處理表單）
