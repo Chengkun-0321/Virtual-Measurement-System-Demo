@@ -1,4 +1,4 @@
-環境建版本
+# 環境建版本
 Package           Version
 ----------------- -------
 asgiref           3.8.1
@@ -14,17 +14,24 @@ setuptools        75.8.0
 sqlparse          0.5.3
 typing_extensions 4.13.2
 
-# 背著而已
-python manage.py startapp blog ->建立應用(app)語法
+
+# 虛擬環境
+py -m venv testenv -> 創建名為 "testenv" 的虛擬環境
+.\testenv\Scripts\activate.ps1 -> 啟用名為 "testenv" 的虛擬環境
+deactivate -> 退出虛擬環境
+
+
+# 備著而已
+python manage.py startapp blog -> 建立應用(app)語法
 將 blog 加入到 mysite/settings.py 裡的 INSTALLED_APPS：
 INSTALLED_APPS = [
     ...,
     'blog',
 ]
 
-# 執行
-進到live_demo資料夾裡
 
-終端機輸入 python manage.py runserver
+# 執行
+1. 進到live_demo資料夾裡
+2. 終端機輸入 python manage.py runserver
 
 http://127.0.0.1:8000/
