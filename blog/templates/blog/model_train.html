@@ -3,21 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <title>模型訓練平台</title>
-    <!-- ✅ Bootstrap 核心樣式：引入 CDN 版本 -->
+    <!-- Bootstrap 核心樣式：引入 CDN 版本 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body class="p-4 bg-light">
-    <!-- 🔲 Bootstrap 容器：集中內容排版 -->
+    <!-- Bootstrap 容器：集中內容排版 -->
     <div class="container">
-        <!-- 📌 頁面標題 -->
+        <!-- 頁面標題 -->
         <h2 class="mb-4 text-center">🚀 模型訓練平台</h2>
 
-        <!-- 🧾 表單區塊包在 Bootstrap 卡片中 -->
+        <!-- 表單區塊包在 Bootstrap 卡片中 -->
         <div class="card p-4 shadow-sm">
             <form method="post" class="mb-4">
                 {% csrf_token %}  <!-- 🔐 CSRF 保護 Token -->
 
-                <!-- 🧩 第一列：模型選擇與資料來源 -->
+                <!-- 第一列：模型選擇與資料來源 -->
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label class="form-label">選擇模型架構</label>
@@ -36,7 +36,7 @@
                         </select>
                     </div>
 
-                    <!-- 📈 第二列：mean 與上下邊界參數 -->
+                    <!-- 第二列：mean 與上下邊界參數 -->
                     <div class="col-md-4 mb-3">
                         <label class="form-label">mean</label>
                         <input type="text" name="mean" class="form-control" value="65.0">
@@ -52,21 +52,21 @@
                         <input type="text" name="boundary_lower" class="form-control" value="60.0">
                     </div>
 
-                    <!-- 💾 模型檢查點檔案路徑 -->
+                    <!-- 模型檢查點檔案路徑 -->
                     <div class="col-12 mb-3">
                         <label class="form-label">Checkpoint 路徑</label>
                         <input type="text" name="checkpoint_path" class="form-control" value="./checkpoint/weights_epoch_500.h5">
                     </div>
                 </div>
 
-                <!-- ▶️ 執行按鈕 -->
+                <!-- 執行按鈕 -->
                 <div class="d-grid">
                     <button type="submit" class="btn btn-primary btn-lg">▶️ 執行模型</button>
                 </div>
             </form>
         </div>
 
-        <!-- 📤 執行結果區塊 -->
+        <!-- 執行結果區塊 -->
         {% if output %}
         <div class="card mt-5 shadow-sm">
             <div class="card-header">
@@ -77,6 +77,11 @@
             </div>
         </div>
         {% endif %}
+
+        <!-- 返回首頁按鈕 -->
+        <div class="text-center mt-4">
+            <a href="/" class="btn btn-secondary btn-lg">🔙 返回首頁</a>
+        </div>
     </div>
 </body>
 </html>
