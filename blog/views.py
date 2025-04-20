@@ -9,6 +9,12 @@ def home(request):
 # 訓練模型畫面
 def run_mamba_remote(request):
     if request.method == "POST":
+        # --- 導入POST資料 ---
+        hostname = request.POST['hostname']     # 伺服器IP
+        port = int(request.POST['port'])        # 埠號
+        username = request.POST['username']     # 使用者帳號
+        password = request.POST['password']     # 密碼
+
         model = request.POST['model']           # 選擇的模型架構名稱
         dataset = request.POST['dataset']       # 資料來源
         mean = request.POST['mean']             # 中心值
@@ -48,7 +54,7 @@ def run_mamba_remote(request):
         # SSH 連線與執行
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        ssh.connect(hostname='你的伺服器IP', port=22, username='你的帳號', password='你的密碼')
+        ssh.connect(hostname = hostname, port = port, username = username, password = password)
 
         stdin, stdout, stderr = ssh.exec_command(cmd)
         result = stdout.read().decode() + stderr.read().decode()
