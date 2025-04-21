@@ -61,7 +61,8 @@ def run_mamba_remote(request):
         ssh.close()
 
         return render(request, 'blog/model_train.html', {'output': result})
-    return render(request, 'blog/model_train.html', {'output': result})
+    
+    return render(request, 'blog/model_train.html')
 
 # 測試模型畫面
 def test_model(request):
