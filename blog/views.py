@@ -18,9 +18,9 @@ def run_mamba_remote(request):
         model = request.POST['model']           # 選擇的模型架構名稱
         dataset = request.POST['dataset']       # 資料來源
         mean = request.POST['mean']             # 中心值
-        upper = request.POST['upper']           # 上界
-        lower = request.POST['lower']           # 下界
-        checkpoint = request.POST['checkpoint'] # 權重檔路徑
+        upper = request.POST['boundary_upper']           # 上界
+        lower = request.POST['boundary_lower']           # 下界
+        checkpoint = request.POST['checkpoint_path'] # 權重檔路徑
 
         # 根據 model 名稱決定路徑與環境
         if model == "mamba_original":
