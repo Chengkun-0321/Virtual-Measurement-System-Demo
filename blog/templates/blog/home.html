@@ -28,14 +28,14 @@
                 <div class="row mb-2 justify-content-center align-items-center">
                     <label for="hostname" class="col-sm-4 col-form-label text-end"><strong>伺服器 IP <font color="red">*</font></strong></label>
                     <div class="col-sm-8">
-                        <input type="text" id="hostname" name="hostname" class="form-control w-75" placeholder="如 192.168.0.1" required>
+                        <input type="text" id="hostname" name="hostname" class="form-control w-75" placeholder="如 192.168.0.1" >
                     </div>
                 </div>
     
                 <div class="row mb-2 justify-content-center align-items-center">
                     <label for="port" class="col-sm-4 col-form-label text-end"><strong>連接埠 <font color="red">*</font></strong></label>
                     <div class="col-sm-8">
-                        <input type="number" id="port" name="port" min="0" max="65535" class="form-control w-75" placeholder="如 6600" required>
+                        <input type="number" id="port" name="port" min="0" max="65535" class="form-control w-75" placeholder="如 6600" >
                     </div>
                 </div>
     
@@ -43,14 +43,14 @@
                 <div class="row mb-2 justify-content-center align-items-center">
                     <label for="username" class="col-sm-4 col-form-label text-end"><strong>使用者名稱 <font color="red">*</font></strong></label>
                     <div class="col-sm-8">
-                        <input type="text" id="username" name="username" class="form-control w-75" placeholder="使用者名稱" required>
+                        <input type="text" id="username" name="username" class="form-control w-75" placeholder="使用者名稱" >
                     </div>
                 </div>
     
                 <div class="row mb-2 justify-content-center align-items-center">
                     <label for="password" class="col-sm-4 col-form-label text-end"><strong>密碼 <font color="red">*</font></strong></label>
                     <div class="col-sm-8">
-                        <input type="password" id="password" name="password" class="form-control w-75" placeholder="密碼" required>
+                        <input type="password" id="password" name="password" class="form-control w-75" placeholder="密碼" >
                     </div>
                 </div>
             </form>
@@ -65,6 +65,7 @@
         }
         
         // 檢查所有欄位是否都被填入
+        /*
         function checkInputsFilled() {
             const hostname = document.getElementById('hostname').value.trim();
             const port = document.getElementById('port').value.trim();
@@ -81,13 +82,14 @@
         
             return allFilled;
         }
-        
+        */
         // 綁定欄位監聽事件
         document.querySelectorAll('#input-form input').forEach(input => {
             input.addEventListener('input', checkInputsFilled);
         });
         
         // 點擊按鈕時，檢查欄位及 IP 格式
+        /*
         document.querySelectorAll('.function-btn').forEach(btn => {
             btn.addEventListener('click', function(e) {
                 const hostname = document.getElementById('hostname').value.trim();
@@ -100,7 +102,7 @@
                     }
                 }
             });
-        });
+        });*/
         
         // 初始化按鈕狀態
         checkInputsFilled();
