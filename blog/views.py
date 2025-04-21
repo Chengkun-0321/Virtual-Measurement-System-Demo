@@ -1,5 +1,6 @@
 from django.shortcuts import render
 import paramiko  # 用來做 SSH
+from django.http import JsonResponse, HttpResponse
 
 # 首頁畫面
 def home(request):
@@ -15,11 +16,11 @@ def run_mamba_remote(request):
         username = request.POST['username']     # 使用者帳號
         password = request.POST['password']     # 密碼
 
-        model = request.POST['model']           # 選擇的模型架構名稱
-        dataset = request.POST['dataset']       # 資料來源
-        mean = request.POST['mean']             # 中心值
-        upper = request.POST['boundary_upper']           # 上界
-        lower = request.POST['boundary_lower']           # 下界
+        model = request.POST['model']               # 選擇的模型架構名稱
+        dataset = request.POST['dataset']           # 資料來源
+        mean = request.POST['mean']                 # 中心值
+        upper = request.POST['boundary_upper']      # 上界
+        lower = request.POST['boundary_lower']      # 下界
         checkpoint = request.POST['checkpoint_path'] # 權重檔路徑
 
         # 根據 model 名稱決定路徑與環境
@@ -70,3 +71,26 @@ def test_model(request):
 
 def show_results(request):
     return render(request, 'blog/results.html')  # 顯示結果頁（也可以先空白）
+
+def ping_test(request):
+    if request.method == 'POST':
+        # 安全處理 port
+        port_str = request.POST.get('port')
+        if not port_str or not port_str.isdigit():
+            return JsonResponse({'status': 'error', 'message': '⚠️ 請輸入有效的 Port 號碼'})
+
+        # 取得其他欄位
+        hostname = request.POST.get('hostname')
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+
+        # 建立 SSH 連線測試
+        ssh = paramiko.SSHClient()
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+
+        try:
+            ssh.connect(hostname=hostname, port=port_str, username=username, password=password)
+            ssh.close()
+            return JsonResponse({'status': 'success', 'message': '✅ 成功連線！'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': f'❌ 連線失敗：{str(e)}'})

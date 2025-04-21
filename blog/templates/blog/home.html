@@ -19,7 +19,7 @@
                 <a href="/results/" class="btn btn-warning btn-lg w-100 function-btn" disabled>3️⃣ 顯示結果</a>
             </div>
         </div>
-    
+        
         <div class="container mt-4">
             <form method="POST" action="/train/" class="mx-auto" style="max-width: 600px;" id="input-form">
                 {% csrf_token %}
@@ -55,7 +55,21 @@
                 </div>
             </form>
         </div>
+        <!-- 🧪 連線測試區塊 -->
+        <div class="row justify-content-center mb-4">
+            <div class="col-md-4">
+                <form method="POST" id="ping-form" action="javascript:void(0);">
+                    {% csrf_token %}
+                    <input type="hidden" name="hostname">
+                    <input type="hidden" name="port">
+                    <input type="hidden" name="username">
+                    <input type="hidden" name="password">
+                    <button type="submit" class="btn btn-outline-dark w-100">🧪 測試連線</button>
+                </form>
+            </div>
+        </div>
     </div>
+
     
     <script>
         // 檢查伺服器 IP 格式
@@ -65,7 +79,7 @@
         }
         
         // 檢查所有欄位是否都被填入
-        /*
+        
         function checkInputsFilled() {
             const hostname = document.getElementById('hostname').value.trim();
             const port = document.getElementById('port').value.trim();
@@ -82,7 +96,7 @@
         
             return allFilled;
         }
-        */
+        
         // 綁定欄位監聽事件
         document.querySelectorAll('#input-form input').forEach(input => {
             input.addEventListener('input', checkInputsFilled);
@@ -104,7 +118,49 @@
             });
         });*/
         
-        // 初始化按鈕狀態
+        // 測試連線表單處理
+        document.querySelector("#ping-form").addEventListener("submit", async function(e) {
+            e.preventDefault(); // ✅ 阻止表單送出跳轉
+          
+            // 填入隱藏欄位
+            this.hostname.value = document.getElementById("hostname").value;
+            this.port.value = document.getElementById("port").value;
+            this.username.value = document.getElementById("username").value;
+            this.password.value = document.getElementById("password").value;
+          
+            // Ajax 發送
+            const formData = new FormData(this);
+            const response = await fetch("{% url 'ping_test' %}", {
+              method: "POST",
+              body: formData,
+              headers: {
+                "X-CSRFToken": formData.get("csrfmiddlewaretoken")
+              }
+            });
+          
+            const data = await response.json();
+            alert(data.message); // ✅ 顯示成功或錯誤訊息
+            const testBtn = this.querySelector("button");
+            let msg = document.getElementById("ping-error-msg");
+            if (!msg) {
+                msg = document.createElement("div");
+                msg.id = "ping-error-msg";
+                testBtn.parentNode.appendChild(msg);
+            }
+            if (data.status === "success") {
+                msg.className = "text-success mt-2";
+                msg.textContent = data.message;
+                testBtn.classList.remove("btn-outline-dark", "btn-danger");
+                testBtn.classList.add("btn-success");
+                testBtn.disabled = false;
+            } else {
+                msg.className = "text-danger mt-2";
+                msg.textContent = data.message;
+                testBtn.classList.remove("btn-outline-dark", "btn-success");
+                testBtn.classList.add("btn-danger");
+                testBtn.disabled = false;
+            }
+          });
         checkInputsFilled();
         </script>
 
