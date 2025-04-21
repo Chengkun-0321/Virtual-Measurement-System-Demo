@@ -11,10 +11,10 @@ def home(request):
 def run_mamba_remote(request):
     if request.method == "POST":
         # --- 導入POST資料 ---
-        hostname = request.POST['hostname']     # 伺服器IP
-        port = int(request.POST['port'])        # 埠號
-        username = request.POST['username']     # 使用者帳號
-        password = request.POST['password']     # 密碼
+        hostname = request.POST['hostname']         # 伺服器IP
+        port = int(request.POST['port'])            # 埠號
+        username = request.POST['username']         # 使用者帳號
+        password = request.POST['password']         # 密碼
 
         model = request.POST['model']               # 選擇的模型架構名稱
         dataset = request.POST['dataset']           # 資料來源
