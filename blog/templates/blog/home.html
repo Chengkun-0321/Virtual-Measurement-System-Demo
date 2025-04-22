@@ -56,6 +56,13 @@
             </form>
         </div>
 
+        <!-- 重新輸入區塊 -->
+        <div class="row justify-content-center mb-4">
+            <div class="col-md-4">
+                <button type="button" class="btn btn-secondary w-100" id="reset-btn">🔄 重新輸入</button>
+            </div>
+        </div>
+
         <!-- 連線測試區塊 -->
         <div class="row justify-content-center mb-4">
             <div class="col-md-4">
@@ -69,13 +76,6 @@
                 </form>
             </div>
         </div>
-
-        <!-- 重新輸入區塊 -->
-        <div class="row justify-content-center mb-4">
-            <div class="col-md-4">
-                <button type="button" class="btn btn-secondary w-100" id="reset-btn">🔄 重新輸入</button>
-            </div>
-        </div>
     </div>
 
     <script>
@@ -86,7 +86,6 @@
         }
         
         // 檢查所有欄位是否都被填入
-        
         function checkInputsFilled() {
             const hostname = document.getElementById('hostname').value.trim();
             const port = document.getElementById('port').value.trim();
@@ -181,18 +180,27 @@
                 testBtn.classList.add("btn-danger");
                 testBtn.disabled = false;
             }
-          });
+        });
 
         document.getElementById('reset-btn').addEventListener('click', function () {
-        
-        // 如果一開始就有值，自動啟用按鈕
-        window.addEventListener("DOMContentLoaded", function() {
+            // 主動清空每個欄位
+            document.getElementById('hostname').value = '';
+            document.getElementById('port').value = '';
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+
+            // 重新檢查欄位狀態，更新按鈕是否可用
             checkInputsFilled();
+
+            // 移除連線測試訊息
+            let msg = document.getElementById("ping-error-msg");
+            if (msg) {
+                msg.remove();
+            }
         });
 
         // 觸發檢查更新按鈕狀態
         checkInputsFilled();
-    });
     </script>
 <footer class="text-center mt-5 p-3 bg-light">
     <p>114年度資訊系統專題 A01 - 李璨宏 & 王正坤</p>
