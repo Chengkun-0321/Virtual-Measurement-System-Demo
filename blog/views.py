@@ -1,20 +1,34 @@
 from django.shortcuts import render
 import paramiko  # 用來做 SSH
 from django.http import JsonResponse, HttpResponse
+from django.views.decorators.csrf import csrf_exempt
 
 # 首頁畫面
+@csrf_exempt
 def home(request):
     # 透過 mysite/setting.py TEMPLATES = [....] 自動尋找 blog/home.html 顯示首頁
-    return render(request, 'blog/home.html')
+    if request.method == "POST":
+        # 存進 session
+        request.session['hostname'] = request.POST.get('hostname', '')
+        request.session['port'] = request.POST.get('port', '')
+        request.session['username'] = request.POST.get('username', '')
+        request.session['password'] = request.POST.get('password', '')
 
-# 訓練模型畫面
+    # 讀取 session 並傳到 template
+    context = {
+        'hostname': request.session.get('hostname', ''),
+        'port': request.session.get('port', ''),
+        'username': request.session.get('username', ''),
+        'password': request.session.get('password', '')
+    }
+    return render(request, 'blog/home.html', context)
+
 def run_mamba_remote(request):
     if request.method == "POST":
-        # --- 導入POST資料 ---
-        hostname = request.POST['hostname']         # 伺服器IP
-        port = int(request.POST['port'])            # 埠號
-        username = request.POST['username']         # 使用者帳號
-        password = request.POST['password']         # 密碼
+        hostname = request.POST['hostname']     # 伺服器IP
+        port = int(request.POST['port'])        # 埠號
+        username = request.POST['username']     # 使用者帳號
+        password = request.POST['password']     # 密碼
 
         model = request.POST['model']               # 選擇的模型架構名稱
         dataset = request.POST['dataset']           # 資料來源
@@ -60,6 +74,7 @@ def run_mamba_remote(request):
         stdin, stdout, stderr = ssh.exec_command(cmd)
         result = stdout.read().decode() + stderr.read().decode()
         ssh.close()
+
 
         return render(request, 'blog/model_train.html', {'output': result})
     

@@ -30,6 +30,16 @@ INSTALLED_APPS = [
 ]
 
 
+# 若出現錯誤 no such table: django_session
+1. 請在你的 Django 專案目錄中執行以下指令
+    python manage.py migrate
+2. 如果是第一次執行資料庫初始化:
+    python manage.py makemigrations
+    python manage.py migrate
+3. 重啟伺服器
+    python manage.py runserver
+
+
 # 執行
 1. 進到live_demo資料夾裡
 2. 終端機輸入 python manage.py runserver
