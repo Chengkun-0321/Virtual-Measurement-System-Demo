@@ -13,7 +13,9 @@ def home(request):
         request.session['port'] = request.POST.get('port', '')
         request.session['username'] = request.POST.get('username', '')
         request.session['password'] = request.POST.get('password', '')
+        return render(request, 'home.html')
 
+    
     # 讀取 session 並傳到 template
     context = {
         'hostname': request.session.get('hostname', ''),
@@ -22,13 +24,14 @@ def home(request):
         'password': request.session.get('password', '')
     }
     return render(request, 'blog/home.html', context)
+    
 
 def run_mamba_remote(request):
     if request.method == "POST":
-        hostname = request.POST['hostname']     # 伺服器IP
-        port = int(request.POST['port'])        # 埠號
-        username = request.POST['username']     # 使用者帳號
-        password = request.POST['password']     # 密碼
+        hostname = request.POST.get('hostname') or request.session.get('hostname')     # 伺服器IP
+        port = int(request.POST.get('port') or request.session.get('port'))      # 埠號
+        username = request.POST.get('username') or request.session.get('username')     # 使用者帳號
+        password = request.POST.get('password') or request.session.get('password')     # 密碼
 
         model = request.POST['model']               # 選擇的模型架構名稱
         dataset = request.POST['dataset']           # 資料來源
@@ -38,10 +41,10 @@ def run_mamba_remote(request):
         checkpoint = request.POST['checkpoint_path'] # 權重檔路徑
 
         # 根據 model 名稱決定路徑與環境
-        if model == "mamba_original":
-            model_dir = "~/HMamba_code"
-            venv_dir = "venv"
-            py_file = "HMambaTest.py"
+        if model == "Mamba":
+            model_dir = "~/桌面/HMamba_code/"
+            venv_dir = "test_env"
+            py_file = "HMambaTrain_ov.py"
         elif model == "mamba_ok":
             model_dir = "~/HMamba_code_OK"
             venv_dir = "env_ok"
@@ -54,17 +57,20 @@ def run_mamba_remote(request):
             return render(request, 'blog/model_train.html', {'output': "❌ 無效的模型選擇"})
 
         # 組合遠端指令（格式化排版）
-        cmd = (
-            f"cd {model_dir} && "       #進入模型的資料夾
-            f"source ~/anaconda3/etc/profile.d/conda.sh && conda activate {venv_dir} && "   #進入專屬訓練環境
-            f"python {py_file} \\ \n"
-            f"  --test_x_path './testing_data/{dataset}/cnn-2d_2020-09-09_11-45-24_x.npy' \\ \n"
-            f"  --test_y_path './testing_data/{dataset}/cnn-2d_2020-09-09_11-45-24_y.npy' \\ \n"
-            f"  --checkpoint_path '{checkpoint}' \\ \n"
-            f"  --mean {mean} \\ \n"
-            f"  --boundary_upper {upper} \\ \n"
-            f"  --boundary_lower {lower}"
-        )
+        cmd = f"""
+            cd {model_dir} && \
+            source ~/anaconda3/etc/profile.d/conda.sh && conda activate {venv_dir} && \
+            python {py_file} \
+            --train_x './training_data/{dataset}/cnn-2d_2020-09-09_11-45-24_x.npy' \
+            --train_y './training_data/{dataset}/cnn-2d_2020-09-09_11-45-24_y.npy' \
+            --valid_x './validation_data/{dataset}/cnn-2d_2020-09-09_11-45-24_x.npy' \
+            --valid_y './validation_data/{dataset}/cnn-2d_2020-09-09_11-45-24_y.npy' \
+            --epochs 2 \
+            --batch_size 129 \
+            --lr 0.0001 \
+            --validation_freq 100
+        """
+
 
         # SSH 連線與執行
         ssh = paramiko.SSHClient()
