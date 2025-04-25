@@ -67,22 +67,72 @@
             </form>
         </div>
 
-        <!-- 執行結果區塊 -->
-        {% if output %}
+        <!-- 執行結果區塊（改為 textarea 即時顯示） -->
         <div class="card mt-5 shadow-sm">
             <div class="card-header">
                 📤 執行結果
             </div>
             <div class="card-body">
-                <pre class="bg-light p-3" style="max-height: 400px; overflow-y: auto;">{{ output }}</pre>
+                <textarea id="output" class="form-control bg-light" rows="15" style="resize: none;" readonly></textarea>
             </div>
         </div>
-        {% endif %}
 
         <!-- 返回首頁按鈕 -->
         <div class="text-center mt-4">
             <a href="/" class="btn btn-secondary btn-lg">🔙 返回首頁</a>
         </div>
     </div>
+    <script>
+        let socket = new WebSocket('ws://' + window.location.host + '/ws/train/');
+
+        socket.onopen = function() {
+            console.log("WebSocket 已連線");
+
+            // ✅ 這裡放你的傳送資料
+            socket.send(JSON.stringify({
+                hostname: document.getElementById('hostname').value,
+                port: document.getElementById('port').value,
+                username: document.getElementById('username').value,
+                password: document.getElementById('password').value
+            }));
+        };
+
+        // 接收資料
+        socket.onmessage = function(event) {
+            const output = document.getElementById('output');
+            output.value += event.data + "\n";
+        };
+
+        // 當整個頁面 (HTML) 載入完成後執行
+        document.addEventListener("DOMContentLoaded", function() {
+            
+            // 建立一個 WebSocket 連線，連到 Django 的 /ws/train/ 路由
+            const socket = new WebSocket("ws://" + window.location.host + "/ws/train/");
+
+            // 當 WebSocket 連線成功時執行
+            socket.onopen = function() {
+                console.log("WebSocket 已連線");
+
+                // 送出 SSH 連線資料（從 Django session 取得），傳給後端 consumers.py
+                socket.send(JSON.stringify({
+                    hostname: "{{ request.session.hostname }}",  // 從 Django session 拿伺服器 IP
+                    port: "{{ request.session.port }}",          // 從 Django session 拿 Port
+                    username: "{{ request.session.username }}",  // 從 Django session 拿使用者名稱
+                    password: "{{ request.session.password }}"   // 從 Django session 拿密碼
+                }));
+            };
+
+            // 當收到後端傳來的訊息時
+            socket.onmessage = function(event) {
+                const output = document.getElementById('output');  // 找到 textarea
+                output.value += event.data + "\n";  // 把訊息加到 textarea，並換行
+            };
+
+            // 如果 WebSocket 出現錯誤
+            socket.onerror = function(error) {
+                console.error("WebSocket 錯誤：", error);  // 在瀏覽器 console 顯示錯誤
+            };
+        });
+    </script>
 </body>
 </html>

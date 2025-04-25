@@ -1,0 +1,27 @@
+整體架構邏輯：
+	1.	前端：
+	    •用 WebSocket 跟後端保持一條持續的連線，隨時可以接收資料。
+        •在頁面載入時建立 WebSocket 連線，傳送 SSH 連線資料（hostname、port、username、password）。
+        •接收到資料時，動態更新畫面上的 <textarea> 或 <pre>，即時顯示遠端執行的輸出。
+	2.	後端 Django (ASGI + Channels)：
+        •使用 ASGI + Django Channels 支援 WebSocket 協定。
+        •當 WebSocket 接收到 SSH 連線資訊時：
+        1.用 Paramiko 建立 SSH 連線。
+        2.執行指定的遠端指令。
+        3.持續讀取 stdout/stderr，一邊讀取、一邊透過 WebSocket 傳送給前端（即時傳回輸出結果）。
+
+[前端頁面載入]
+      │
+[建立 WebSocket 連線]
+      │
+[傳送 SSH 連線資料]
+      │
+[後端 WebSocket 接收，建立 SSH 連線 (Paramiko)]
+      │
+[執行遠端指令]
+      │
+[讀取 stdout/stderr 實時輸出]
+      │
+[透過 WebSocket 傳回給前端]
+      │
+[前端更新畫面 (textarea/pre)]

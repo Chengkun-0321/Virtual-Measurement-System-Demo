@@ -29,7 +29,7 @@ def home(request):
 def run_mamba_remote(request):
     if request.method == "POST":
         hostname = request.POST.get('hostname') or request.session.get('hostname')     # 伺服器IP
-        port = int(request.POST.get('port') or request.session.get('port'))      # 埠號
+        port = int(request.POST.get('port') or request.session.get('port'))            # 埠號
         username = request.POST.get('username') or request.session.get('username')     # 使用者帳號
         password = request.POST.get('password') or request.session.get('password')     # 密碼
 
@@ -81,6 +81,7 @@ def run_mamba_remote(request):
         result = stdout.read().decode() + stderr.read().decode()
         ssh.close()
 
+        print("🔄 載入模型訓練頁面")
 
         return render(request, 'blog/model_train.html', {'output': result})
     
@@ -100,17 +101,23 @@ def ping_test(request):
         if not port_str or not port_str.isdigit():
             return JsonResponse({'status': 'error', 'message': '⚠️ 請輸入有效的 Port 號碼'})
 
-        # 取得其他欄位
         hostname = request.POST.get('hostname')
         username = request.POST.get('username')
         password = request.POST.get('password')
+
+        request.session['ssh_info'] = {
+            'hostname': hostname,
+            'port': port_str,
+            'username': username,
+            'password': password
+        }
 
         # 建立 SSH 連線測試
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
         try:
-            ssh.connect(hostname=hostname, port=port_str, username=username, password=password)
+            ssh.connect(hostname=hostname, port=int(port_str), username=username, password=password)
             ssh.close()
             return JsonResponse({'status': 'success', 'message': '✅ 成功連線！'})
         except Exception as e:
