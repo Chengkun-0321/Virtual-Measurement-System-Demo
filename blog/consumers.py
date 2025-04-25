@@ -6,6 +6,7 @@ class TrainConsumer(AsyncWebsocketConsumer):
     # 當有 WebSocket 連線進來時會觸發
     async def connect(self):
         await self.accept()  # 接受 WebSocket 連線
+        print("WebSocket 已建立連線")
 
     # 當前端送資料過來時會觸發
     async def receive(self, text_data):
@@ -20,7 +21,18 @@ class TrainConsumer(AsyncWebsocketConsumer):
         # 建立 SSH 連線
         ssh = paramiko.SSHClient()  # 初始化 SSH Client
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())  # 自動接受不在 known_hosts 的主機金鑰
-        ssh.connect(hostname=hostname, port=port, username=username, password=password)  # 進行 SSH 連線
+        try:
+            ssh.connect(hostname=hostname, port=port, username=username, password=password)
+            await self.send("✅ SSH 連線成功！")  # 成功建立 SSH 後回傳訊息給前端
+
+            # 取得遠端系統資訊
+            stdin, stdout, stderr = ssh.exec_command("uname -a")
+            sysinfo = stdout.read().decode().strip()
+            await self.send(f"🖥️ 遠端系統資訊：{sysinfo}")
+
+        except Exception as e:
+            await self.send(f"❌ SSH 連線失敗：{str(e)}")
+            return  # 失敗時中止後續流程
         
         # 要在遠端執行的指令（可以改成你要訓練模型的指令）
         cmd = "echo 'Hello from remote!'"
