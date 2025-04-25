@@ -56,11 +56,23 @@ def run_mamba_remote(request):
         else:
             return render(request, 'blog/model_train.html', {'output': "❌ 無效的模型選擇"})
 
-        # 組合遠端指令（格式化排版）
-        cmd = f"""
-            cd {model_dir} && \
-            source ~/anaconda3/etc/profile.d/conda.sh && conda activate {venv_dir} && \
-            python {py_file} \
+        # SSH 連線與執行
+        ssh = paramiko.SSHClient()
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        ssh.connect(hostname = hostname, port = port, username = username, password = password)
+
+        # 分三段執行，並收集輸出
+        # 1. 進入模型資料夾
+        stdin, stdout, stderr = ssh.exec_command(f"cd {model_dir} && pwd")
+        folder_info = stdout.read().decode() + stderr.read().decode()
+
+        # 2. 啟動 conda 環境
+        stdin, stdout, stderr = ssh.exec_command(f"source ~/anaconda3/etc/profile.d/conda.sh && conda activate {venv_dir} && conda info --envs")
+        env_info = stdout.read().decode() + stderr.read().decode()
+
+        # 3. 執行訓練指令
+        train_cmd = f"""
+        python {py_file} \
             --train_x './training_data/{dataset}/cnn-2d_2020-09-09_11-45-24_x.npy' \
             --train_y './training_data/{dataset}/cnn-2d_2020-09-09_11-45-24_y.npy' \
             --valid_x './validation_data/{dataset}/cnn-2d_2020-09-09_11-45-24_x.npy' \
@@ -70,15 +82,13 @@ def run_mamba_remote(request):
             --lr 0.0001 \
             --validation_freq 100
         """
+        stdin, stdout, stderr = ssh.exec_command(
+            f"cd {model_dir} && source ~/anaconda3/etc/profile.d/conda.sh && conda activate {venv_dir} && {train_cmd}"
+        )
+        train_output = stdout.read().decode() + stderr.read().decode()
 
-
-        # SSH 連線與執行
-        ssh = paramiko.SSHClient()
-        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        ssh.connect(hostname = hostname, port = port, username = username, password = password)
-
-        stdin, stdout, stderr = ssh.exec_command(cmd)
-        result = stdout.read().decode() + stderr.read().decode()
+        # 合併三段輸出
+        result = folder_info + "\n" + env_info + "\n" + train_output
         ssh.close()
 
         print("🔄 載入模型訓練頁面")
