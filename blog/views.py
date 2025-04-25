@@ -96,15 +96,18 @@ def show_results(request):
 
 def ping_test(request):
     if request.method == 'POST':
-        # 安全處理 port
+        # 取得 port 並檢查格式是否正確（必須是數字）
         port_str = request.POST.get('port')
         if not port_str or not port_str.isdigit():
+            # 如果 port 沒有填或不是數字，回傳錯誤訊息
             return JsonResponse({'status': 'error', 'message': '⚠️ 請輸入有效的 Port 號碼'})
 
+        # 取得其他 SSH 連線資訊（hostname、username、password）
         hostname = request.POST.get('hostname')
         username = request.POST.get('username')
         password = request.POST.get('password')
 
+        # 將這些 SSH 資訊暫存到 Django session（給其他頁面用）
         request.session['ssh_info'] = {
             'hostname': hostname,
             'port': port_str,
