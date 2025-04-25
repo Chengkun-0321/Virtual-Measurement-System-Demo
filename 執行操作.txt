@@ -60,7 +60,7 @@ INSTALLED_APPS = [
 
 # 執行
 1. 進到live_demo資料夾裡
-2. Daphne 啟動 python -m daphne mysite.asgi:application; 執行程式
+2. Daphne 啟動 python -m daphne mysite.asgi:application;  執行程式
 3. 終端機輸入 python manage.py runserver
 
 http://127.0.0.1:8000/
