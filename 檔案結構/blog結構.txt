@@ -13,8 +13,9 @@ blog/
 ├── __init__.py
 ├── admin.py                    ←將資料表註冊到後台管理
 ├── apps.py                     ←註冊app的設定資料
-├── blog結構.txt
+├── consumers.py                ←類似 Django 的 views.py，但處理 WebSocket 邏輯
 ├── models.py                   ←定義資料表結構（欄位、關聯）
+├── routing.py                  ←類似 Django 的 urls.py，但處理 WebSocket
 ├── tests.py    
 ├── urls.py                     ←定義這個app的網址路徑
-├── views.py                    ←寫畫面邏輯（回傳HTML、處理表單）
+└── views.py                    ←寫畫面邏輯（回傳HTML、處理表單）
