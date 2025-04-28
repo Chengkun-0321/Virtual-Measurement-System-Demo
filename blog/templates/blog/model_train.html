@@ -60,9 +60,19 @@
                     </div>
                 </div>
 
-                <!-- 執行按鈕 -->
+                <!-- 進入資料夾 -->
+                <div class="d-grid mb-2">
+                    <button type="button" class="btn btn-secondary btn-lg" id="enter-folder">📁 進入資料夾</button>
+                </div>
+
+                <!-- 進入虛擬環境 -->
+                <div class="d-grid mb-2">
+                    <button type="button" class="btn btn-info btn-lg" id="activate-env">💻 進入虛擬環境</button>
+                </div>
+
+                <!-- 執行模型 -->
                 <div class="d-grid">
-                    <button type="submit" class="btn btn-primary btn-lg">▶️ 執行模型</button>
+                    <button type="button" class="btn btn-primary btn-lg" id="run-train">▶️ 執行模型</button>
                 </div>
             </form>
         </div>
@@ -83,55 +93,38 @@
         </div>
     </div>
     <script>
-        let socket = new WebSocket('ws://' + window.location.host + '/ws/train/');
-
-        socket.onopen = function() {
-            console.log("WebSocket 已連線");
-
-            // ✅ 這裡放你的傳送資料
-            socket.send(JSON.stringify({
-                hostname: document.getElementById('hostname').value,
-                port: document.getElementById('port').value,
-                username: document.getElementById('username').value,
-                password: document.getElementById('password').value
-            }));
-        };
-
-        // 接收資料
-        socket.onmessage = function(event) {
-            const output = document.getElementById('output');
-            output.value += event.data + "\n";
-        };
-
-        // 當整個頁面 (HTML) 載入完成後執行
         document.addEventListener("DOMContentLoaded", function() {
-            
-            // 建立一個 WebSocket 連線，連到 Django 的 /ws/train/ 路由
             const socket = new WebSocket("ws://" + window.location.host + "/ws/train/");
 
-            // 當 WebSocket 連線成功時執行
             socket.onopen = function() {
                 console.log("WebSocket 已連線");
-
-                // 送出 SSH 連線資料（從 Django session 取得），傳給後端 consumers.py
+                // 送出 SSH 連線資料
                 socket.send(JSON.stringify({
-                    hostname: "{{ request.session.hostname }}",  // 從 Django session 拿伺服器 IP
-                    port: "{{ request.session.port }}",          // 從 Django session 拿 Port
-                    username: "{{ request.session.username }}",  // 從 Django session 拿使用者名稱
-                    password: "{{ request.session.password }}"   // 從 Django session 拿密碼
+                    action: 'ssh_connect',
+                    hostname: "{{ request.session.ssh_info.hostname }}",
+                    port: "{{ request.session.ssh_info.port }}",
+                    username: "{{ request.session.ssh_info.username }}",
+                    password: "{{ request.session.ssh_info.password }}"
                 }));
             };
 
-            // 當收到後端傳來的訊息時
             socket.onmessage = function(event) {
-                const output = document.getElementById('output');  // 找到 textarea
-                output.value += event.data + "\n";  // 把訊息加到 textarea，並換行
+                const output = document.getElementById('output');
+                output.value += event.data + "\n";  // 顯示在 textarea
             };
-
-            // 如果 WebSocket 出現錯誤
-            socket.onerror = function(error) {
-                console.error("WebSocket 錯誤：", error);  // 在瀏覽器 console 顯示錯誤
-            };
+            
+            // 綁定按鈕
+            document.getElementById('enter-folder').addEventListener('click', function() {
+                const model = document.querySelector('select[name="model"]').value;
+                socket.send(JSON.stringify({ action: 'enter_folder', model: model }));
+            });
+            document.getElementById('activate-env').addEventListener('click', function() {
+                const model = document.querySelector('select[name="model"]').value;
+                socket.send(JSON.stringify({ action: 'activate_env', model: model }));
+            });
+            document.getElementById('run-train').addEventListener('click', function() {
+                socket.send(JSON.stringify({ action: 'run-train' }));
+            });
         });
     </script>
 </body>

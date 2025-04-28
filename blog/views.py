@@ -3,6 +3,23 @@ import paramiko  # 用來做 SSH
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 
+def execute_train_command(ssh, model_dir, venv_dir, py_file, dataset):
+    # 執行訓練指令
+    train_cmd = (
+        f"python {py_file} "
+        f"--train_x './training_data/{dataset}/cnn-2d_2020-09-09_11-45-24_x.npy' "
+        f"--train_y './training_data/{dataset}/cnn-2d_2020-09-09_11-45-24_y.npy' "
+        f"--valid_x './validation_data/{dataset}/cnn-2d_2020-09-09_11-45-24_x.npy' "
+        f"--valid_y './validation_data/{dataset}/cnn-2d_2020-09-09_11-45-24_y.npy' "
+        "--epochs 2 --batch_size 129 --lr 0.0001 --validation_freq 100"
+    )
+    stdin, stdout, stderr = ssh.exec_command(
+        f"cd {model_dir} && source ~/anaconda3/etc/profile.d/conda.sh && conda activate {venv_dir} && {train_cmd}"
+    )
+    output = stdout.read().decode()
+    error = stderr.read().decode()
+    return output + error
+
 # 首頁畫面
 @csrf_exempt
 def home(request):
@@ -42,7 +59,7 @@ def run_mamba_remote(request):
 
         # 根據 model 名稱決定路徑與環境
         if model == "Mamba":
-            model_dir = "~/桌面/HMamba_code/"
+            model_dir = "~/Desktop/HMamba_code"
             venv_dir = "test_env"
             py_file = "HMambaTrain_ov.py"
         elif model == "mamba_ok":
@@ -71,21 +88,7 @@ def run_mamba_remote(request):
         env_info = stdout.read().decode() + stderr.read().decode()
 
         # 3. 執行訓練指令
-        train_cmd = f"""
-        python {py_file} \
-            --train_x './training_data/{dataset}/cnn-2d_2020-09-09_11-45-24_x.npy' \
-            --train_y './training_data/{dataset}/cnn-2d_2020-09-09_11-45-24_y.npy' \
-            --valid_x './validation_data/{dataset}/cnn-2d_2020-09-09_11-45-24_x.npy' \
-            --valid_y './validation_data/{dataset}/cnn-2d_2020-09-09_11-45-24_y.npy' \
-            --epochs 2 \
-            --batch_size 129 \
-            --lr 0.0001 \
-            --validation_freq 100
-        """
-        stdin, stdout, stderr = ssh.exec_command(
-            f"cd {model_dir} && source ~/anaconda3/etc/profile.d/conda.sh && conda activate {venv_dir} && {train_cmd}"
-        )
-        train_output = stdout.read().decode() + stderr.read().decode()
+        train_output = execute_train_command(ssh, model_dir, venv_dir, py_file, dataset)
 
         # 合併三段輸出
         result = folder_info + "\n" + env_info + "\n" + train_output

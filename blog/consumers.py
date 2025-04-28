@@ -1,45 +1,73 @@
-import paramiko  # 用來建立 SSH 連線
-import json  # 處理前端送來的 JSON 格式資料
-from channels.generic.websocket import AsyncWebsocketConsumer  # Django Channels 的 WebSocket 消費者
+import paramiko
+import json
+from channels.generic.websocket import AsyncWebsocketConsumer
 
 class TrainConsumer(AsyncWebsocketConsumer):
-    # 當有 WebSocket 連線進來時會觸發
     async def connect(self):
-        await self.accept()  # 接受 WebSocket 連線
-        print("WebSocket 已建立連線")
+        await self.accept()
+        self.ssh = None  # 預設 SSH 為 None
 
-    # 當前端送資料過來時會觸發
+    async def disconnect(self, close_code):
+        if self.ssh:
+            self.ssh.close()
+
     async def receive(self, text_data):
-        data = json.loads(text_data)    # 解析前端傳來的 JSON 字串為 Python 字典
-        hostname = data['hostname']     # 取得 SSH 連線所需的 hostname
-        port = int(data['port'])        # 取得 SSH 連線所需的 port，並轉為整數
-        username = data['username']     # 取得 SSH 連線所需的使用者名稱
-        password = data['password']     # 取得 SSH 連線所需的密碼
+        data = json.loads(text_data)
+        action = data.get('action')
 
-        print(f"接收到 SSH 連線資料：hostname={hostname}, port={port}, username={username}")  # 紀錄一下收到的連線資訊
+        if action == 'ssh_connect':
+            # SSH 連線
+            hostname = data['hostname']
+            port = int(data['port'])
+            username = data['username']
+            password = data['password']
 
-        # 建立 SSH 連線
-        ssh = paramiko.SSHClient()  # 初始化 SSH Client
-        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())  # 自動接受不在 known_hosts 的主機金鑰
-        try:
-            ssh.connect(hostname=hostname, port=port, username=username, password=password)
-            await self.send("✅ SSH 連線成功！")  # 成功建立 SSH 後回傳訊息給前端
+            self.model_dir = data.get('model_dir', '~/HMamba_code')
+            self.venv_dir = data.get('venv_dir', 'test_env')
+            self.py_file = data.get('py_file', 'HMambaTrain_ov.py')
+            self.dataset = data.get('dataset', 'PETBottle')
 
-            # 取得遠端系統資訊
-            stdin, stdout, stderr = ssh.exec_command("uname -a")
-            sysinfo = stdout.read().decode().strip()
-            await self.send(f"🖥️ 遠端系統資訊：{sysinfo}")
+            self.ssh = paramiko.SSHClient()
+            self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            self.ssh.connect(hostname=hostname, port=port, username=username, password=password)
+            await self.send("✅ SSH 連線成功！")
 
-        except Exception as e:
-            await self.send(f"❌ SSH 連線失敗：{str(e)}")
-            return  # 失敗時中止後續流程
-        
-        # 要在遠端執行的指令（可以改成你要訓練模型的指令）
-        cmd = "echo 'Hello from remote!'"
-        stdin, stdout, stderr = ssh.exec_command(cmd)  # 執行指令，並取得標準輸出、錯誤輸出
+        elif action == 'enter_folder':
+            if action == 'enter_folder':
+                model = data.get('model')
+                if model == 'Mamba':
+                    model_dir = "~/桌面/HMamba_code"  # 改這裡
+                elif model == 'mamba_ok':
+                    model_dir = "~/HMamba_code_OK"
+                # 其他模型
+                cmd = f"cd {model_dir} && pwd"
+                await self.run_command(cmd)
 
-        # 逐行讀取遠端回傳的標準輸出，並透過 WebSocket 傳回前端
+        elif action == 'activate_env':
+            cmd = f"source ~/anaconda3/etc/profile.d/conda.sh && conda activate {self.venv_dir} && conda info --envs"
+            await self.run_command(cmd)
+
+        elif action == 'run-train':
+            # 傳送開始訓練的通知訊息給前端
+            await self.send(json.dumps({"message": "🚀 收到 start_training 指令"}))
+            # 執行訓練指令
+            cmd = (
+                f"cd {self.model_dir} && "
+                f"source ~/anaconda3/etc/profile.d/conda.sh && "
+                f"conda activate {self.venv_dir} && "
+                f"python {self.py_file} "
+                f"--train_x './training_data/{self.dataset}/cnn-2d_2020-09-09_11-45-24_x.npy' "
+                f"--train_y './training_data/{self.dataset}/cnn-2d_2020-09-09_11-45-24_y.npy' "
+                f"--valid_x './validation_data/{self.dataset}/cnn-2d_2020-09-09_11-45-24_x.npy' "
+                f"--valid_y './validation_data/{self.dataset}/cnn-2d_2020-09-09_11-45-24_y.npy' "
+                "--epochs 2 --batch_size 129 --lr 0.0001 --validation_freq 100"
+            )
+            await self.run_command(cmd)
+
+    async def run_command(self, cmd):
+        stdin, stdout, stderr = self.ssh.exec_command(cmd)
+        # 即時回傳每一行輸出
         for line in stdout:
-            await self.send(line.strip())  # 把每行輸出的內容傳回前端（即時顯示）
-
-        ssh.close()  # 關閉 SSH 連線
+            await self.send(line.strip())
+        for line in stderr:
+            await self.send(line.strip())
