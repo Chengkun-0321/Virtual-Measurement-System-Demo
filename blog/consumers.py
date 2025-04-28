@@ -22,9 +22,9 @@ class TrainConsumer(AsyncWebsocketConsumer):
             username = data['username']
             password = data['password']
 
-            self.model_dir = data.get('model_dir', '~/HMamba_code')
-            self.venv_dir = data.get('venv_dir', 'test_env')
-            self.py_file = data.get('py_file', 'HMambaTrain_ov.py')
+            self.model_dir = data.get('model_dir', '~/code/HMamba_code')
+            self.venv_dir = data.get('venv_dir', 'mamba')
+            self.py_file = data.get('py_file', 'HMambaTrain.py')
             self.dataset = data.get('dataset', 'PETBottle')
 
             self.ssh = paramiko.SSHClient()
@@ -33,23 +33,31 @@ class TrainConsumer(AsyncWebsocketConsumer):
             await self.send("✅ SSH 連線成功！")
 
         elif action == 'enter_folder':
-            if action == 'enter_folder':
-                model = data.get('model')
-                if model == 'Mamba':
-                    model_dir = "~/桌面/HMamba_code"  # 改這裡
-                elif model == 'mamba_ok':
-                    model_dir = "~/HMamba_code_OK"
-                # 其他模型
-                cmd = f"cd {model_dir} && pwd"
-                await self.run_command(cmd)
+            model = data.get('model')
+            if model == 'Mamba':
+                self.model_dir = "~/code/HMamba_code"  # 改這裡
+            elif model == 'mamba_ok':
+                self.model_dir = "~/HMamba_code_OK"
+            # 其他模型
+            cmd = f"cd {self.model_dir} && pwd"
+            await self.send("✅ 成功進入資料夾：")
+            await self.run_command(cmd)
 
         elif action == 'activate_env':
             cmd = f"source ~/anaconda3/etc/profile.d/conda.sh && conda activate {self.venv_dir} && conda info --envs"
+            await self.send(f"✅ 成功進入虛擬環境：{self.venv_dir}！")
             await self.run_command(cmd)
 
         elif action == 'run-train':
             # 傳送開始訓練的通知訊息給前端
-            await self.send(json.dumps({"message": "🚀 收到 start_training 指令"}))
+            await self.send(f"🚀 收到 start_training 指令！")
+
+            model = data.get('model')
+            if model == 'Mamba':
+                self.model_dir = "~/code/HMamba_code"  # 改這裡
+            elif model == 'mamba_ok':
+                self.model_dir = "~/HMamba_code_OK"
+                
             # 執行訓練指令
             cmd = (
                 f"cd {self.model_dir} && "
@@ -60,7 +68,7 @@ class TrainConsumer(AsyncWebsocketConsumer):
                 f"--train_y './training_data/{self.dataset}/cnn-2d_2020-09-09_11-45-24_y.npy' "
                 f"--valid_x './validation_data/{self.dataset}/cnn-2d_2020-09-09_11-45-24_x.npy' "
                 f"--valid_y './validation_data/{self.dataset}/cnn-2d_2020-09-09_11-45-24_y.npy' "
-                "--epochs 2 --batch_size 129 --lr 0.0001 --validation_freq 100"
+                f"--epochs 2 --batch_size 129 --lr 0.0001 --validation_freq 100"
             )
             await self.run_command(cmd)
 
