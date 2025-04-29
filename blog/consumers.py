@@ -27,6 +27,10 @@ class TrainConsumer(AsyncWebsocketConsumer):
             self.venv_dir = data.get('venv_dir', 'mamba')
             self.py_file = data.get('py_file', 'HMambaTrain.py')
             self.dataset = data.get('dataset', 'PETBottle')
+            self.epochs = data.get('epochs', '10')
+            self.batch_size = data.get('batch_size', '129')
+            self.learning_rate = data.get('learning_rate', '0.0001')
+            self.validation_freq = data.get('validation_freq', '1')
 
             self.ssh = paramiko.SSHClient()
             self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -56,7 +60,10 @@ class TrainConsumer(AsyncWebsocketConsumer):
                 f"--train_y './training_data/{self.dataset}/cnn-2d_2020-09-09_11-45-24_y.npy' "
                 f"--valid_x './validation_data/{self.dataset}/cnn-2d_2020-09-09_11-45-24_x.npy' "
                 f"--valid_y './validation_data/{self.dataset}/cnn-2d_2020-09-09_11-45-24_y.npy' "
-                f"--epochs 2 --batch_size 129 --lr 0.0001 --validation_freq 1"
+                f"--epochs {self.epochs} "
+                f"--batch_size {self.batch_size} "
+                f"--lr {self.learning_rate} "
+                f"--validation_freq {self.validation_freq}"
             )
 
             await self.run_command(cmd)
