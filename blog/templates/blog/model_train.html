@@ -18,8 +18,8 @@
             <form method="post" class="mb-4">
                 {% csrf_token %}  <!-- CSRF 保護 Token -->
 
-                <!-- 第一列：模型選擇與資料來源 -->
                 <div class="row">
+                    <!-- 第一列：模型選擇與資料來源 -->
                     <div class="col-md-6 mb-3">
                         <label class="form-label">選擇模型架構</label>
                         <select name="model" class="form-select">
@@ -28,7 +28,7 @@
                             <option value="LSTM">LSTM</option>
                         </select>
                     </div>
-
+                    
                     <div class="col-md-6 mb-3">
                         <label class="form-label">訓練資料來源</label>
                         <select name="dataset" class="form-select">
@@ -37,7 +37,7 @@
                         </select>
                     </div>
 
-                    <!-- 第二列：mean 與上下邊界參數 -->
+                    <!-- 第二列：epochs、batch_size、learning_rate、validation_freq參數 -->
                     <div class="col-md-3 mb-3">
                         <label class="form-label">epochs</label>
                         <input type="text" name="epochs" class="form-control" value="10">
@@ -57,16 +57,16 @@
                         <input type="text" name="validation_freq" class="form-control" value="1">
                     </div>
 
-                    <!-- 模型檢查點檔案路徑 -->
+                    <!-- 第三列：模型權重儲存路徑 -->
                     <div class="col-12 mb-3">
-                        <label class="form-label">Checkpoint 路徑</label>
+                        <label class="form-label">Checkpoint 儲存路徑</label>
                         <input type="text" name="checkpoint_path" class="form-control" value="./checkpoint/weights_epoch_500.h5">
                     </div>
-                </div>
 
-                <!-- 執行模型 -->
-                <div class="d-grid">
-                    <button type="button" class="btn btn-primary btn-lg" id="run-train">▶️ 執行模型訓練</button>
+                    <!-- 第四列：執行訓練按鈕 -->
+                    <div class="d-grid">
+                        <button type="button" class="btn btn-primary btn-lg" id="run-train">▶️ 執行模型訓練</button>
+                    </div>
                 </div>
             </form>
         </div>

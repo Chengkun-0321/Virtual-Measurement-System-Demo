@@ -1,8 +1,8 @@
 <!-- 導覽列區塊：顯示虛擬量測平台的功能頁面連結 -->
-<nav class="navbar navbar-expand-sm" style="background-color: #ADD8E6;">
+<nav class="navbar navbar-expand-sm" style="background-color: #FFC0CB;">
     <div class="container-fluid">
         <!-- 網站品牌名稱，點擊可回首頁 -->
-        <a class="navbar-brand fs-3" href="/">虛擬量測平台</a>
+        <a class="navbar-brand fs-3 text-success" href="/">虛擬量測平台</a>
         <!-- 手機版導覽列折疊按鈕 -->
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse"
                 aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
@@ -17,15 +17,15 @@
                 </li>
                 <li class="nav-item">
                     <!-- 模型訓練頁面 -->
-                    <a class="nav-link fs-5 text-light" href="{% url 'train' %}">模型訓練</a>
+                    <a class="nav-link fs-5 text-dark" href="{% url 'train' %}">模型訓練</a>
                 </li>
                 <li class="nav-item">
                     <!-- 測試模型頁面 -->
-                    <a class="nav-link fs-5 text-light" href="{% url 'test' %}">測試模型</a>
+                    <a class="nav-link fs-5 text-dark" href="{% url 'test' %}">測試模型</a>
                 </li>
                 <li class="nav-item">
                     <!-- 顯示結果頁面 -->
-                    <a class="nav-link fs-5 text-light" href="{% url 'results' %}">顯示結果</a>
+                    <a class="nav-link fs-5 text-dark" href="{% url 'results' %}">顯示結果</a>
                 </li>
             </ul>
         </div>
