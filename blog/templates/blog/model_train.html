@@ -66,7 +66,7 @@
 
                 <!-- 執行模型 -->
                 <div class="d-grid">
-                    <button type="button" class="btn btn-primary btn-lg" id="run-train">▶️ 執行模型</button>
+                    <button type="button" class="btn btn-primary btn-lg" id="run-train">▶️ 執行模型訓練</button>
                 </div>
             </form>
         </div>
@@ -90,7 +90,7 @@
         document.addEventListener("DOMContentLoaded", function() {
             const runTrainButton = document.getElementById('run-train');
 
-            const socket = new WebSocket("ws://" + window.location.host + "/ws/train/");
+            const socket = new WebSocket("ws://" + window.location.host + "/ws/CMD/");
 
             socket.onopen = function() {
                 console.log("WebSocket 已連線");
@@ -108,9 +108,9 @@
                 output.value += event.data + "\n";
 
                 // 收到表示訓練結束的關鍵字後，解除禁用並恢復原狀
-                if (event.data.includes("Training complete") || event.data.includes("Finished")) {
+                if (event.data.includes("訓練完成")) {
                     runTrainButton.disabled = false;
-                    runTrainButton.innerHTML = '▶️ 執行模型';
+                    runTrainButton.innerHTML = '▶️ 執行模型訓練';
                 }
             };
 
@@ -118,11 +118,25 @@
             runTrainButton.addEventListener('click', function() {
                 runTrainButton.disabled = true;
                 runTrainButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> 執行中...';
-                // 此處也可以將表單的其它參數一併打包後發送
-                socket.send(JSON.stringify({ action: 'run-train' }));
+
+                // 收集表單欄位資料
+                const form = document.querySelector('form');
+                const formData = new FormData(form);
+                const data = {
+                    action: 'run-train',
+                    model: formData.get('model'),
+                    dataset: formData.get('dataset'),
+                    epochs: formData.get('epochs'),
+                    batch_size: formData.get('batch_size'),
+                    learning_rate: formData.get('learning_rate'),
+                    validation_freq: formData.get('validation_freq'),
+                    checkpoint_path: formData.get('checkpoint_path')
+                };
+
+                // 傳送資料到後端
+                socket.send(JSON.stringify(data));
             });
         });
-
     </script>
 </body>
 </html>

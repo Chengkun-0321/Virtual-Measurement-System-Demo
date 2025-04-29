@@ -29,44 +29,106 @@
                     </div>
 
                     <div class="col-md-6 mb-3">
+                        <label class="form-label">測試資料來源</label>
+                        <select name="dataset" class="form-select">
+                            <option value="PETBottle">PETBottle</option>
+                            <option value="TFT">TFT</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
                         <label class="form-label">選擇 Checkpoint 檔案</label>
-                        <input type="text" name="checkpoint_path" class="form-control" placeholder="./checkpoint/...">
+                        <input type="text" name="checkpoint_path" class="form-control" value="./checkpoint/weights_epoch_500.h5">
                     </div>
 
                     <div class="col-md-6 mb-3">
-                        <label class="form-label">測試資料 X 檔案路徑</label>
-                        <input type="text" name="test_x_path" class="form-control">
+                        <label class="form-label">mean</label>
+                        <input type="text" name="mean" class="form-control" value="65.0">
                     </div>
 
                     <div class="col-md-6 mb-3">
-                        <label class="form-label">測試資料 Y 檔案路徑</label>
-                        <input type="text" name="test_y_path" class="form-control">
+                        <label class="form-label">boundary_upper</label>
+                        <input type="text" name="boundary_upper" class="form-control" value="70.0">
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">boundary_lower</label>
+                        <input type="text" name="boundary_lower" class="form-control" value="60.0">
                     </div>
                 </div>
 
                 <!-- 執行按鈕 -->
                 <div class="d-grid">
-                    <button type="submit" class="btn btn-success btn-lg">▶️ 執行模型測試</button>
+                    <button type="button" class="btn btn-success btn-lg" id="run-test">▶️ 執行模型測試</button>
                 </div>
             </form>
         </div>
 
-        <!-- 測試結果區塊 -->
-        {% if output %}
+        <!-- 執行結果區塊（改為 textarea 即時顯示） -->
         <div class="card mt-5 shadow-sm">
             <div class="card-header">
-                📊 測試結果
+                📤 執行結果
             </div>
             <div class="card-body">
-                <pre class="bg-light p-3" style="max-height: 400px; overflow-y: auto;">{{ output }}</pre>
+                <textarea id="output" class="form-control bg-light" rows="15" style="resize: none;" readonly></textarea>
             </div>
         </div>
-        {% endif %}
 
         <!-- 返回首頁按鈕 -->
         <div class="text-center mt-4">
             <a href="/" class="btn btn-secondary btn-lg">🔙 返回首頁</a>
         </div>
     </div>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const runTrainButton = document.getElementById('run-test');
+
+            const socket = new WebSocket("ws://" + window.location.host + "/ws/CMD/");
+
+            socket.onopen = function() {
+                console.log("WebSocket 已連線");
+                socket.send(JSON.stringify({
+                    action: 'ssh_connect',
+                    hostname: "{{ request.session.ssh_info.hostname }}",
+                    port: "{{ request.session.ssh_info.port }}",
+                    username: "{{ request.session.ssh_info.username }}",
+                    password: "{{ request.session.ssh_info.password }}"
+                }));
+            };
+
+            socket.onmessage = function(event) {
+                const output = document.getElementById('output');
+                output.value += event.data + "\n";
+
+                // 收到表示訓練結束的關鍵字後，解除禁用並恢復原狀
+                if (event.data.includes("Heatmaps 繪圖完成")) {
+                    runTrainButton.disabled = false;
+                    runTrainButton.innerHTML = '▶️ 執行模型測試';
+                }
+            };
+
+            // 綁定其他按鈕事件
+            runTrainButton.addEventListener('click', function() {
+                runTrainButton.disabled = true;
+                runTrainButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> 執行中...';
+                
+                // 收集表單欄位資料
+                const form = document.querySelector('form');
+                const formData = new FormData(form);
+                const data = {
+                    action: 'run-test',
+                    model: formData.get('model'),
+                    dataset: formData.get('dataset'),
+                    checkpoint_path: formData.get('checkpoint_path'),
+                    mean: formData.get('mean'),
+                    boundary_upper: formData.get('boundary_upper'),
+                    boundary_lower: formData.get('boundary_lower')
+                };
+
+                // 傳送資料到後端
+                socket.send(JSON.stringify(data));
+            });
+        });
+    </script>
 </body>
 </html>

@@ -3,7 +3,7 @@ import asyncio
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 
-class TrainConsumer(AsyncWebsocketConsumer):
+class CMDConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         await self.accept()
         self.ssh = None  # 預設 SSH 為 None
@@ -23,15 +23,6 @@ class TrainConsumer(AsyncWebsocketConsumer):
             username = data['username']
             password = data['password']
 
-            self.model_dir = data.get('model_dir', '~/code/HMamba_code')
-            self.venv_dir = data.get('venv_dir', 'mamba')
-            self.py_file = data.get('py_file', 'HMambaTrain.py')
-            self.dataset = data.get('dataset', 'PETBottle')
-            self.epochs = data.get('epochs', '10')
-            self.batch_size = data.get('batch_size', '129')
-            self.learning_rate = data.get('learning_rate', '0.0001')
-            self.validation_freq = data.get('validation_freq', '1')
-
             self.ssh = paramiko.SSHClient()
             self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             self.ssh.connect(hostname=hostname, port=port, username=username, password=password)
@@ -43,13 +34,37 @@ class TrainConsumer(AsyncWebsocketConsumer):
         elif action == 'run-train':
             # 傳送開始訓練的通知訊息給前端
             await self.send(f"🚀 收到 start_training 指令！")
+            self.py_file = "HMambaTrain.py"
+            self.venv_dir = data.get('venv_dir', 'mamba')
 
+            # 模型架構
             model = data.get('model')
             if model == 'Mamba':
-                self.model_dir = "~/code/HMamba_code"  # 改這裡
+                self.model_dir = "~/code/HMamba_code"
             elif model == 'mamba_ok':
                 self.model_dir = "~/HMamba_code_OK"
-                
+
+            # 資料來源
+            dataset = data.get('dataset')
+            if dataset == 'PETBottle':
+                self.dataset = "PETBottle"
+            elif model == 'TFT':
+                self.dataset = "TFT"
+
+            
+            # epochs
+            self.epochs = data.get('epochs')
+
+            # batch_size
+            self.batch_size = data.get('batch_size')
+
+            # learning_rate
+            self.learning_rate = data.get('learning_rate')
+
+            # validation_freq
+            self.validation_freq = data.get('validation_freq')
+
+
             # 執行訓練指令
             cmd = (
                 f"cd {self.model_dir} && "
@@ -64,6 +79,54 @@ class TrainConsumer(AsyncWebsocketConsumer):
                 f"--batch_size {self.batch_size} "
                 f"--lr {self.learning_rate} "
                 f"--validation_freq {self.validation_freq}"
+            )
+
+            await self.run_command(cmd)
+
+        elif action == 'run-test':
+            # 傳送開始訓練的通知訊息給前端
+            await self.send(f"🚀 收到 start_testing 指令！")
+            self.py_file = "HmambaTest.py"
+            self.venv_dir = data.get('venv_dir', 'mamba2')
+
+            # 模型架構
+            model = data.get('model')
+            if model == 'Mamba':
+                self.model_dir = "~/code/HMamba_code"
+            elif model == 'mamba_ok':
+                self.model_dir = "~/HMamba_code_OK"
+
+            # 資料來源
+            dataset = data.get('dataset')
+            if dataset == 'PETBottle':
+                self.dataset = "PETBottle"
+            elif dataset == 'TFT':
+                self.dataset = "TFT"
+
+            # checkpoint_path
+            self.checkpoint_path = data.get('checkpoint_path')
+
+            # mean
+            self.mean = data.get('mean')
+
+            # boundary_upper
+            self.boundary_upper = data.get('boundary_upper')
+
+            # boundary_lower
+            self.boundary_lower = data.get('boundary_lower')
+
+            # 執行訓練指令
+            cmd = (
+                f"cd {self.model_dir} && "
+                f"source ~/anaconda3/etc/profile.d/conda.sh && "
+                f"conda activate {self.venv_dir} && "
+                f"python -u {self.py_file} "
+                f"--test_x_path './testing_data/{self.dataset}/cnn-2d_2020-09-09_11-45-24_x.npy' "
+                f"--test_y_path './testing_data/{self.dataset}/cnn-2d_2020-09-09_11-45-24_y.npy' "
+                f"--checkpoint_path {self.checkpoint_path} "
+                f"--mean '{self.mean}' "
+                f"--boundary_upper '{self.boundary_upper}' "
+                f"--boundary_lower {self.boundary_lower}"
             )
 
             await self.run_command(cmd)
@@ -86,8 +149,11 @@ class TrainConsumer(AsyncWebsocketConsumer):
                 while "\n" in buffer:
                     line, buffer = buffer.split("\n", 1)
                     await self.send(line)
+
             if shell.recv_stderr_ready():
                 err = shell.recv_stderr(1024).decode("utf-8")
                 await self.send(f"❌ {err}")
+
             if shell.exit_status_ready():
                 break
+

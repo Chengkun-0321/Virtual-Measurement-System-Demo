@@ -7,5 +7,5 @@ from . import consumers
 # 定義 WebSocket 路由列表
 websocket_urlpatterns = [
     # 當網址為 ws/train/ 時，使用 TrainConsumer 處理 WebSocket 連線
-    re_path(r'ws/train/$', consumers.TrainConsumer.as_asgi()),
+    re_path(r'ws/CMD/$', consumers.CMDConsumer.as_asgi()),
 ]
