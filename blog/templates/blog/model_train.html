@@ -60,16 +60,6 @@
                     </div>
                 </div>
 
-                <!-- 進入資料夾 -->
-                <div class="d-grid mb-2">
-                    <button type="button" class="btn btn-secondary btn-lg" id="enter-folder">📁 進入資料夾</button>
-                </div>
-
-                <!-- 進入虛擬環境 -->
-                <div class="d-grid mb-2">
-                    <button type="button" class="btn btn-info btn-lg" id="activate-env">💻 進入虛擬環境</button>
-                </div>
-
                 <!-- 執行模型 -->
                 <div class="d-grid">
                     <button type="button" class="btn btn-primary btn-lg" id="run-train">▶️ 執行模型</button>
@@ -121,15 +111,6 @@
             };
 
             // 綁定其他按鈕事件
-            document.getElementById('enter-folder').addEventListener('click', function() {
-                const model = document.querySelector('select[name="model"]').value;
-                socket.send(JSON.stringify({ action: 'enter_folder', model: model }));
-            });
-            document.getElementById('activate-env').addEventListener('click', function() {
-                const model = document.querySelector('select[name="model"]').value;
-                socket.send(JSON.stringify({ action: 'activate_env', model: model }));
-            });
-            // 這裡使用正確引用具體的 runTrainButton
             runTrainButton.addEventListener('click', function() {
                 runTrainButton.disabled = true;
                 runTrainButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> 執行中...';

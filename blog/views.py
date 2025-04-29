@@ -78,6 +78,7 @@ def run_mamba_remote(request):
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         ssh.connect(hostname = hostname, port = port, username = username, password = password)
 
+        '''
         # 分三段執行，並收集輸出
         # 1. 進入模型資料夾
         stdin, stdout, stderr = ssh.exec_command(f"cd {model_dir} && pwd")
@@ -95,8 +96,9 @@ def run_mamba_remote(request):
         ssh.close()
 
         print("🔄 載入模型訓練頁面")
-
         return render(request, 'blog/model_train.html', {'output': result})
+        '''
+        return render(request, 'blog/model_train.html')
     
     return render(request, 'blog/model_train.html')
 

@@ -31,23 +31,10 @@ class TrainConsumer(AsyncWebsocketConsumer):
             self.ssh = paramiko.SSHClient()
             self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             self.ssh.connect(hostname=hostname, port=port, username=username, password=password)
-            await self.send("✅ SSH 連線成功！")
-
-        elif action == 'enter_folder':
-            model = data.get('model')
-            if model == 'Mamba':
-                self.model_dir = "~/code/HMamba_code"  # 改這裡
-            elif model == 'mamba_ok':
-                self.model_dir = "~/HMamba_code_OK"
-            # 其他模型
-            cmd = f"cd {self.model_dir} && pwd"
-            await self.send("✅ 成功進入資料夾：")
-            await self.run_command(cmd)
-
-        elif action == 'activate_env':
-            cmd = f"source ~/anaconda3/etc/profile.d/conda.sh && conda activate {self.venv_dir} && conda info --envs"
-            await self.send(f"✅ 成功進入虛擬環境：{self.venv_dir}！")
-            await self.run_command(cmd)
+            if self.ssh is None:
+                await self.send("❌ 尚未建立 SSH 連線")
+            else:
+                await self.send("✅ SSH 連線成功！")
 
         elif action == 'run-train':
             # 傳送開始訓練的通知訊息給前端
@@ -69,15 +56,16 @@ class TrainConsumer(AsyncWebsocketConsumer):
                 f"--train_y './training_data/{self.dataset}/cnn-2d_2020-09-09_11-45-24_y.npy' "
                 f"--valid_x './validation_data/{self.dataset}/cnn-2d_2020-09-09_11-45-24_x.npy' "
                 f"--valid_y './validation_data/{self.dataset}/cnn-2d_2020-09-09_11-45-24_y.npy' "
-                f"--epochs 2 --batch_size 129 --lr 0.0001 --validation_freq 100"
+                f"--epochs 2 --batch_size 129 --lr 0.0001 --validation_freq 1"
             )
 
             await self.run_command(cmd)
 
     async def run_command(self, cmd):
+        '''
         if self.ssh is None:
             await self.send("❌ 尚未建立 SSH 連線")
-            return
+            return'''
 
         shell = self.ssh.invoke_shell()
         shell.send(cmd + "\n")

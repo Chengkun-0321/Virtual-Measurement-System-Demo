@@ -16,3 +16,6 @@ db.sqlite3
 # migrations
 **/migrations/
 !**/migrations/__init__.py
+
+# testenv虛擬環境
+testenv/
