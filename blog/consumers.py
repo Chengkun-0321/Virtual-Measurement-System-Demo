@@ -1,4 +1,5 @@
 import paramiko
+import asyncio
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 
@@ -63,19 +64,35 @@ class TrainConsumer(AsyncWebsocketConsumer):
                 f"cd {self.model_dir} && "
                 f"source ~/anaconda3/etc/profile.d/conda.sh && "
                 f"conda activate {self.venv_dir} && "
-                f"python {self.py_file} "
+                f"python -u {self.py_file} "
                 f"--train_x './training_data/{self.dataset}/cnn-2d_2020-09-09_11-45-24_x.npy' "
                 f"--train_y './training_data/{self.dataset}/cnn-2d_2020-09-09_11-45-24_y.npy' "
                 f"--valid_x './validation_data/{self.dataset}/cnn-2d_2020-09-09_11-45-24_x.npy' "
                 f"--valid_y './validation_data/{self.dataset}/cnn-2d_2020-09-09_11-45-24_y.npy' "
                 f"--epochs 2 --batch_size 129 --lr 0.0001 --validation_freq 100"
             )
+
             await self.run_command(cmd)
 
     async def run_command(self, cmd):
-        stdin, stdout, stderr = self.ssh.exec_command(cmd)
-        # 即時回傳每一行輸出
-        for line in stdout:
-            await self.send(line.strip())
-        for line in stderr:
-            await self.send(line.strip())
+        if self.ssh is None:
+            await self.send("❌ 尚未建立 SSH 連線")
+            return
+
+        shell = self.ssh.invoke_shell()
+        shell.send(cmd + "\n")
+
+        buffer = ""
+        while True:
+            await asyncio.sleep(0.5)
+            if shell.recv_ready():
+                data = shell.recv(1024).decode("utf-8")
+                buffer += data
+                while "\n" in buffer:
+                    line, buffer = buffer.split("\n", 1)
+                    await self.send(line)
+            if shell.recv_stderr_ready():
+                err = shell.recv_stderr(1024).decode("utf-8")
+                await self.send(f"❌ {err}")
+            if shell.exit_status_ready():
+                break
