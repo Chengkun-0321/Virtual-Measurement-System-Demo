@@ -110,8 +110,8 @@
                 // 執行結果自動捲動
                 output.scrollTop = output.scrollHeight;
 
-                // 收到表示訓練結束的關鍵字後，解除禁用並恢復原狀
-                if (event.data.includes("訓練完成")) {
+                // 收到表示訓練結束的關鍵字後，解除禁用並恢復狀態
+                if (event.data.includes("finish")) {
                     runTrainButton.disabled = false;
                     runTrainButton.innerHTML = '▶️ 執行模型訓練';
                 }

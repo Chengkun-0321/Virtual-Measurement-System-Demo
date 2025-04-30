@@ -154,6 +154,7 @@ class CMDConsumer(AsyncWebsocketConsumer):
                 err = shell.recv_stderr(1024).decode("utf-8")
                 await self.send(f"❌ {err}")
 
+            '''
             if shell.exit_status_ready():
                 break
-
+            '''
