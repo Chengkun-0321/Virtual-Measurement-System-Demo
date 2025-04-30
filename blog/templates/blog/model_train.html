@@ -107,6 +107,9 @@
                 const output = document.getElementById('output');
                 output.value += event.data + "\n";
 
+                // 執行結果自動捲動
+                output.scrollTop = output.scrollHeight;
+
                 // 收到表示訓練結束的關鍵字後，解除禁用並恢復原狀
                 if (event.data.includes("訓練完成")) {
                     runTrainButton.disabled = false;
