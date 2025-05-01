@@ -40,7 +40,7 @@ class CMDConsumer(AsyncWebsocketConsumer):
             # 模型架構
             model = data.get('model')
             if model == 'Mamba':
-                self.model_dir = "~/code/HMamba_code"
+                self.model_dir = "~/Virtual_Measurement_System_model/HMamba_code"
             elif model == 'mamba_ok':
                 self.model_dir = "~/HMamba_code_OK"
 
@@ -86,13 +86,13 @@ class CMDConsumer(AsyncWebsocketConsumer):
         elif action == 'run-test':
             # 傳送開始訓練的通知訊息給前端
             await self.send(f"🚀 收到 start_testing 指令！")
-            self.py_file = "HmambaTest.py"
+            self.py_file = "HMambaTest.py"
             self.venv_dir = data.get('venv_dir', 'mamba2')
 
             # 模型架構
             model = data.get('model')
             if model == 'Mamba':
-                self.model_dir = "~/code/HMamba_code"
+                self.model_dir = "~/Virtual_Measurement_System_model/HMamba_code"
             elif model == 'mamba_ok':
                 self.model_dir = "~/HMamba_code_OK"
 

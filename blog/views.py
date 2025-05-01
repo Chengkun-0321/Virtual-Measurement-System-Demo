@@ -59,7 +59,7 @@ def run_mamba_remote(request):
 
         # 根據 model 名稱決定路徑與環境
         if model == "Mamba":
-            model_dir = "~/code/HMamba_code"
+            model_dir = "~/Virtual_Measurement_System_model/HMamba_code"
             venv_dir = "mamba"
             py_file = "HMambaTrain_ov.py"
         elif model == "mamba_ok":
