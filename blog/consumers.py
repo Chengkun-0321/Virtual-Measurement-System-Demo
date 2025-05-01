@@ -1,6 +1,8 @@
 import paramiko
 import asyncio
 import json
+import os
+from datetime import datetime
 from channels.generic.websocket import AsyncWebsocketConsumer
 
 class CMDConsumer(AsyncWebsocketConsumer):
@@ -34,7 +36,7 @@ class CMDConsumer(AsyncWebsocketConsumer):
         elif action == 'run-train':
             # 傳送開始訓練的通知訊息給前端
             await self.send(f"🚀 收到 start_training 指令！")
-            self.py_file = "HMambaTrain.py"
+            self.py_file = "HMambaTrain_plot_checkpoint_gpu_time.py"
             self.venv_dir = data.get('venv_dir', 'mamba')
 
             # 模型架構
@@ -71,23 +73,31 @@ class CMDConsumer(AsyncWebsocketConsumer):
                 f"source ~/anaconda3/etc/profile.d/conda.sh && "
                 f"conda activate {self.venv_dir} && "
                 f"python -u {self.py_file} "
-                f"--train_x './training_data/{self.dataset}/cnn-2d_2020-09-09_11-45-24_x.npy' "
-                f"--train_y './training_data/{self.dataset}/cnn-2d_2020-09-09_11-45-24_y.npy' "
-                f"--valid_x './validation_data/{self.dataset}/cnn-2d_2020-09-09_11-45-24_x.npy' "
-                f"--valid_y './validation_data/{self.dataset}/cnn-2d_2020-09-09_11-45-24_y.npy' "
+                f"--train_x './process_data_Splitting/training_data/{self.dataset}/cnn-2d_2020-09-09_11-45-24_x.npy' "
+                f"--train_y './process_data_Splitting/training_data/{self.dataset}/cnn-2d_2020-09-09_11-45-24_y.npy' "
+                f"--valid_x './process_data_Splitting/validation_data/{self.dataset}/cnn-2d_2020-09-09_11-45-24_x.npy' "
+                f"--valid_y './process_data_Splitting/validation_data/{self.dataset}/cnn-2d_2020-09-09_11-45-24_y.npy' "
                 f"--epochs {self.epochs} "
                 f"--batch_size {self.batch_size} "
                 f"--lr {self.learning_rate} "
                 f"--validation_freq {self.validation_freq}"
             )
-
             await self.run_command(cmd)
+
+            # 下載圖片
+            remote_trainplot_dir = f"./plot/{self.timestamp_date}/"
+
+            media_url = await self.fetch_remote_images(remote_trainplot_dir)
+            await self.send(json.dumps({
+                "type": "media_paths",
+                "url": media_url
+            }))
 
         elif action == 'run-test':
             # 傳送開始訓練的通知訊息給前端
             await self.send(f"🚀 收到 start_testing 指令！")
-            self.py_file = "HMambaTest.py"
-            self.venv_dir = data.get('venv_dir', 'mamba2')
+            self.py_file = "HMambaTest_time.py"
+            self.venv_dir = data.get('venv_dir', 'mamba')
 
             # 模型架構
             model = data.get('model')
@@ -121,15 +131,22 @@ class CMDConsumer(AsyncWebsocketConsumer):
                 f"source ~/anaconda3/etc/profile.d/conda.sh && "
                 f"conda activate {self.venv_dir} && "
                 f"python -u {self.py_file} "
-                f"--test_x_path './testing_data/{self.dataset}/cnn-2d_2020-09-09_11-45-24_x.npy' "
-                f"--test_y_path './testing_data/{self.dataset}/cnn-2d_2020-09-09_11-45-24_y.npy' "
+                f"--test_x_path './process_data_Splitting/testing_data/{self.dataset}/cnn-2d_2020-09-09_11-45-24_x.npy' "
+                f"--test_y_path './process_data_Splitting/testing_data/{self.dataset}/cnn-2d_2020-09-09_11-45-24_y.npy' "
                 f"--checkpoint_path {self.checkpoint_path} "
                 f"--mean '{self.mean}' "
                 f"--boundary_upper '{self.boundary_upper}' "
                 f"--boundary_lower {self.boundary_lower}"
             )
-
             await self.run_command(cmd)
+
+            # 下載圖片
+            remote_heatmap_dir = f"result_plot/result_heatmaps/{self.timestamp}/AN_L"
+            media_url = await self.fetch_remote_images(remote_heatmap_dir)
+            await self.send(json.dumps({
+                "type": "media_paths",
+                "url": media_url
+            }))
 
     async def run_command(self, cmd):
         '''
@@ -144,7 +161,7 @@ class CMDConsumer(AsyncWebsocketConsumer):
         while True:
             await asyncio.sleep(0.5)
             if shell.recv_ready():
-                data = shell.recv(1024).decode("utf-8")
+                data = shell.recv(1024).decode("utf-8", errors="replace")
                 buffer += data
                 while "\n" in buffer:
                     line, buffer = buffer.split("\n", 1)
@@ -158,3 +175,24 @@ class CMDConsumer(AsyncWebsocketConsumer):
             if shell.exit_status_ready():
                 break
             '''
+
+    async def fetch_remote_images(self, remote_heatmap_dir, remote_trainplot_dir):
+        sftp = self.ssh.open_sftp()
+
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        local_base_dir = f"media/results/{timestamp}"
+        os.makedirs(local_base_dir + "/heatmap", exist_ok=True)
+        os.makedirs(local_base_dir + "/trainplot", exist_ok=True)
+
+        # 🔥 下載熱像圖（.svg）
+        for filename in sftp.listdir(remote_heatmap_dir):
+            if filename.endswith('.svg'):
+                sftp.get(os.path.join(remote_heatmap_dir, filename), os.path.join(local_base_dir, "heatmap", filename))
+
+        # 📈 下載訓練曲線（.png）
+        for filename in sftp.listdir(remote_trainplot_dir):
+            if filename.endswith('.png'):
+                sftp.get(os.path.join(remote_trainplot_dir, filename), os.path.join(local_base_dir, "trainplot", filename))
+
+        sftp.close()
+        return f"/media/results/{timestamp}"

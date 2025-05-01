@@ -14,24 +14,11 @@
 
         <!-- 🔁 歷史紀錄區塊：未來從資料庫傳入 -->
         {% if results %}
-            <div class="row row-cols-1 row-cols-md-2 g-4">
-                {% for result in results %}
-                <div class="col">
-                    <div class="card h-100 shadow-sm">
-                        <div class="card-body">
-                            <h5 class="card-title">{{ result.model_name }}</h5>
-                            <p class="card-text">
-                                <strong>資料集：</strong> {{ result.dataset }}<br>
-                                <strong>mean：</strong> {{ result.mean }}<br>
-                                <strong>邊界：</strong> {{ result.boundary_lower }} ~ {{ result.boundary_upper }}<br>
-                                <strong>Accuracy：</strong> {{ result.accuracy }}<br>
-                                <strong>時間：</strong> {{ result.timestamp }}
-                            </p>
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
+            <h3>🔥 熱像圖</h3>
+            <div id="heatmap-container" class="row"></div>
+            
+            <h3 class="mt-5">📈 訓練曲線</h3>
+            <div id="trainplot-container" class="row"></div>
         {% else %}
             <div class="alert alert-warning text-center">
                 尚無任何訓練或測試紀錄。
@@ -43,5 +30,26 @@
             <a href="/" class="btn btn-secondary btn-lg">🔙 返回首頁</a>
         </div>
     </div>
+    <script>
+        socket.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+
+            if (data.type === 'media_paths') {
+                const mediaUrl = data.url;
+
+                fetch(mediaUrl + "/heatmap/")
+                    .then(response => response.text())
+                    .then(html => {
+                        document.getElementById('heatmap-container').innerHTML = html;
+                    });
+
+                fetch(mediaUrl + "/trainplot/")
+                    .then(response => response.text())
+                    .then(html => {
+                        document.getElementById('trainplot-container').innerHTML = html;
+                    });
+            }
+        };
+    </script>
 </body>
 </html>
