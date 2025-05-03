@@ -17,9 +17,13 @@ db.sqlite3
 **/migrations/
 !**/migrations/__init__.py
 
-# static
-static/heatmaps/
-static/trainplot/
+# 忽略這兩個資料夾裡的所有檔案
+static/heatmaps/*
+static/trainplot/*
+
+# 但保留 .gitkeep 檔案
+!static/heatmaps/.gitkeep
+!static/trainplot/.gitkeep
 
 # testenv虛擬環境
 testenv/
