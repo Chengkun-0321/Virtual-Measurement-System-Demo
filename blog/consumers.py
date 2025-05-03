@@ -4,6 +4,7 @@ import json
 import os
 from datetime import datetime
 from channels.generic.websocket import AsyncWebsocketConsumer
+from django.conf import settings  # 確保你有引入
 
 class CMDConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -148,6 +149,13 @@ class CMDConsumer(AsyncWebsocketConsumer):
                 "url": media_url
             }))
 
+        elif action == 'list-heatmap-files':
+            folder = data.get("folder")
+            print(f"🧪 收到 list-heatmap-files 請求，資料夾：{folder}")
+            await self.send_heatmap_filenames(folder)
+        elif action == 'list-results':
+            await self.send_all_result_folders()
+
     async def run_command(self, cmd):
         '''
         if self.ssh is None:
@@ -175,24 +183,49 @@ class CMDConsumer(AsyncWebsocketConsumer):
             if shell.exit_status_ready():
                 break
             '''
+    
 
-    async def fetch_remote_images(self, remote_heatmap_dir, remote_trainplot_dir):
-        sftp = self.ssh.open_sftp()
+    async def send_all_result_folders(self):
+        heatmaps_dir = 'static/heatmaps'
+        trainplot_dir = 'static/trainplot'
 
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        local_base_dir = f"media/results/{timestamp}"
-        os.makedirs(local_base_dir + "/heatmap", exist_ok=True)
-        os.makedirs(local_base_dir + "/trainplot", exist_ok=True)
+        folders = []
+        # 以排序後的名稱列出所有資料夾
+        for name in sorted(os.listdir(heatmaps_dir)):
+            heat_path = os.path.join(heatmaps_dir, name)
+            train_path = os.path.join(trainplot_dir, name)
 
-        # 🔥 下載熱像圖（.svg）
-        for filename in sftp.listdir(remote_heatmap_dir):
-            if filename.endswith('.svg'):
-                sftp.get(os.path.join(remote_heatmap_dir, filename), os.path.join(local_base_dir, "heatmap", filename))
+            if os.path.isdir(heat_path) or os.path.isdir(train_path):
+                heatmap_url = f"/static/heatmaps/{name}/" if os.path.isdir(heat_path) else None
+                trainplot_url = f"/static/trainplot/{name}/" if os.path.isdir(train_path) else None
+                folders.append({
+                    "date": name,
+                    "heatmap_url": heatmap_url,
+                    "trainplot_url": trainplot_url
+                })
 
-        # 📈 下載訓練曲線（.png）
-        for filename in sftp.listdir(remote_trainplot_dir):
-            if filename.endswith('.png'):
-                sftp.get(os.path.join(remote_trainplot_dir, filename), os.path.join(local_base_dir, "trainplot", filename))
+        await self.send(text_data=json.dumps({
+            "type": "media_folders",
+            "folders": folders
+        }))
 
-        sftp.close()
-        return f"/media/results/{timestamp}"
+
+    async def send_heatmap_filenames(self, folder_name):
+        print(f"📂 開始列出資料夾 {folder_name} 的檔案")  # 除錯用
+        path = os.path.join(settings.BASE_DIR, 'static', 'heatmaps', folder_name, 'AN_L')
+        if not os.path.isdir(path):
+            print("❌ 資料夾不存在：", path)
+            await self.send(json.dumps({
+                "type": "heatmap_files",
+                "folder": folder_name,
+                "files": []
+            }))
+            return
+
+        files = [f for f in os.listdir(path) if f.endswith('.svg')]
+        print("✅ 找到檔案：", files)
+        await self.send(json.dumps({
+            "type": "heatmap_files",
+            "folder": folder_name,
+            "files": files
+        }))

@@ -13,17 +13,17 @@
         <h2 class="mb-4 text-center">📊 模型訓練與測試結果頁面</h2>
 
         <!-- 🔁 歷史紀錄區塊：未來從資料庫傳入 -->
-        {% if results %}
-            <h3>🔥 熱像圖</h3>
-            <div id="heatmap-container" class="row"></div>
-            
-            <h3 class="mt-5">📈 訓練曲線</h3>
-            <div id="trainplot-container" class="row"></div>
-        {% else %}
-            <div class="alert alert-warning text-center">
-                尚無任何訓練或測試紀錄。
-            </div>
-        {% endif %}
+        <h3 class="mt-5">🔥 熱像圖日期選擇</h3>
+        <div id="heatmap-folder-buttons" class="text-center mb-4"></div>
+
+        <h3 class="mt-5">📈 訓練曲線日期選擇</h3>
+        <div id="trainplot-folder-buttons" class="text-center mb-4"></div>
+
+        <h3>🔥 熱像圖</h3>
+        <div id="heatmap-container" class="row"></div>
+
+        <h3 class="mt-5">📈 訓練曲線</h3>
+        <div id="trainplot-container" class="row"></div>
 
         <!-- 🔙 返回首頁按鈕 -->
         <div class="text-center mt-4">
@@ -31,24 +31,71 @@
         </div>
     </div>
     <script>
+        const socket = new WebSocket("ws://" + window.location.host + "/ws/CMD/");
+        
         socket.onmessage = function(event) {
             const data = JSON.parse(event.data);
+            console.log(data);
 
-            if (data.type === 'media_paths') {
-                const mediaUrl = data.url;
+            if (data.type === 'media_folders') {
+                const heatmapContainer = document.getElementById('heatmap-folder-buttons');
+                const trainplotContainer = document.getElementById('trainplot-folder-buttons');
+                heatmapContainer.innerHTML = '';
+                trainplotContainer.innerHTML = '';
 
-                fetch(mediaUrl + "/heatmap/")
-                    .then(response => response.text())
-                    .then(html => {
-                        document.getElementById('heatmap-container').innerHTML = html;
-                    });
+                data.folders.forEach(folder => {
+                    // 熱像圖按鈕
+                    const heatBtn = document.createElement('button');
+                    heatBtn.textContent = folder.date;
+                    heatBtn.className = "btn btn-outline-danger m-2";
+                    heatBtn.onclick = () => {
+                        socket.send(JSON.stringify({
+                            action: 'list-heatmap-files',
+                            folder: folder.date
+                        }));
+                    };
+                    heatmapContainer.appendChild(heatBtn);
 
-                fetch(mediaUrl + "/trainplot/")
-                    .then(response => response.text())
-                    .then(html => {
-                        document.getElementById('trainplot-container').innerHTML = html;
-                    });
+                    // 訓練圖按鈕
+                    const trainBtn = document.createElement('button');
+                    trainBtn.textContent = folder.date;
+                    trainBtn.className = "btn btn-outline-primary m-2";
+                    trainBtn.onclick = () => loadTrainplots(folder.trainplot_url);
+                    trainplotContainer.appendChild(trainBtn);
+                });
             }
+            else if (data.type === 'heatmap_files') {
+                console.log("📥 接收到 heatmap_files", data);
+                const heatmapContainer = document.getElementById('heatmap-container');
+                heatmapContainer.innerHTML = '';
+
+                const folder = data.folder;
+                const files = data.files;
+
+                files.forEach(filename => {
+                    const img = document.createElement('img');
+                    img.src = `/static/heatmaps/${folder}/AN_L/${filename}`;
+                    img.className = "img-fluid col-md-4 p-2";
+                    heatmapContainer.appendChild(img);
+                });
+            }
+        };
+
+
+        function loadTrainplots(trainplotUrl) {
+            const trainplotContainer = document.getElementById('trainplot-container');
+            trainplotContainer.innerHTML = '';
+            ['loss.png', 'acc.png'].forEach(file => {
+                const img = document.createElement('img');
+                img.src = trainplotUrl + file;
+                img.className = "img-fluid col-md-6 p-2";
+                trainplotContainer.appendChild(img);
+            });
+        }
+        
+        // 👉 一進來就請求所有資料夾
+        socket.onopen = () => {
+            socket.send(JSON.stringify({ action: "list-results" }));
         };
     </script>
 </body>

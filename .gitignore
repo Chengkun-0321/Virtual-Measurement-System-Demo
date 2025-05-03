@@ -17,5 +17,9 @@ db.sqlite3
 **/migrations/
 !**/migrations/__init__.py
 
+# static
+static/heatmaps/
+static/trainplot/
+
 # testenv虛擬環境
 testenv/
