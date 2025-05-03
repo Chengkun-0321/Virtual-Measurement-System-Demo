@@ -31,31 +31,26 @@ txaio             23.1.1
 typing_extensions 4.13.2
 wheel             0.45.1
 zope.interface    7.2
-
-
+---------------------------------------------
+掛載伺服器上要顯示的圖片
+1.安裝
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 brew install --cask macfuse
 brew install gromgit/fuse/sshfs-mac
 
+2.建立要掛載的資料夾
 mkdir -p /Users/zhengkun/程式/虛擬量測專題/2-1專題code/live_demo2/static/heatmaps
 mkdir -p /Users/zhengkun/程式/虛擬量測專題/2-1專題code/live_demo2/static/trainplot
 
+3.掛載
 sshfs vms@140.137.41.136:/home/vms/Virtual_Measurement_System_model/HMamba_code/result_plot/result_heatmaps ~/vms_mount/heatmaps
 sshfs vms@140.137.41.136:/home/vms/Virtual_Measurement_System_model/HMamba_code/result_plot/Training_History_Plot ~/vms_mount/trainplot
+-----------------------------------
 
 # 虛擬環境
 py -m venv testenv -> 創建名為 "testenv" 的虛擬環境
 .\testenv\Scripts\activate.ps1 -> 啟用名為 "testenv" 的虛擬環境
 deactivate -> 退出虛擬環境
-
-
-# 備著而已
-python manage.py startapp blog -> 建立應用(app)語法
-將 blog 加入到 mysite/settings.py 裡的 INSTALLED_APPS：
-INSTALLED_APPS = [
-    ...,
-    'blog',
-]
 
 
 # 若出現錯誤 no such table: django_session
@@ -73,6 +68,6 @@ INSTALLED_APPS = [
 2. Daphne 啟動 python -m daphne mysite.asgi:application;  執行程式
 3. 終端機輸入 python manage.py runserver
 
-python -m daphne -p 8000 mysite.asgi:application
+2+3 執行指令結合：python -m daphne -p 8000 mysite.asgi:application
 
 http://127.0.0.1:8000/
