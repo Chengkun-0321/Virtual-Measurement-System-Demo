@@ -40,13 +40,13 @@ class CMDConsumer(AsyncWebsocketConsumer):
         elif action == 'run-train':
             # 傳送開始訓練的通知訊息給前端
             await self.send(f"🚀 收到 start_training 指令！")
-            self.py_file = "HMambaTrain_plot_checkpoint_gpu_time.py"
+            self.py_file = "train_code.py"
             self.venv_dir = data.get('venv_dir', 'mamba')
 
             # 模型架構
             model = data.get('model')
             if model == 'Mamba':
-                self.model_dir = "~/Virtual_Measurement_System_model/HMamba_code"
+                self.model_dir = "~/Virtual_Measurement_System_model/Model_code"
             elif model == 'mamba_ok':
                 self.model_dir = "~/HMamba_code_OK"
 
