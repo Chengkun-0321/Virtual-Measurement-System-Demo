@@ -24,5 +24,6 @@ urlpatterns = [
     path('', include('blog.urls')),  # ✅ 將「根網址 /」交給 blog app 的 urls.py 處理
 ]
 
-# ⭐️ 開發階段啟用 static 靜態檔案（尤其要能載入 svg 熱像圖）
-urlpatterns += static(settings.STATIC_URL, document_root=settings.STATICFILES_DIRS[0])
+# 僅在 DEBUG 模式下讓 Django 提供靜態檔案
+if settings.DEBUG:
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

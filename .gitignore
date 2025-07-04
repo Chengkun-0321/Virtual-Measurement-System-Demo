@@ -27,3 +27,4 @@ static/trainplot/*
 
 # testenv虛擬環境
 testenv/
+webenv/
