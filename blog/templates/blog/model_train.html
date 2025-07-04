@@ -13,6 +13,9 @@
         <!-- 頁面標題 -->
         <h2 class="mb-4 text-center">🚀 模型訓練頁面</h2>
 
+        <!-- 🔥 SSH 連線提示 -->
+        <div id="ssh-status" class="text-center mb-3"></div>
+
         <!-- 表單區塊包在 Bootstrap 卡片中 -->
         <div class="card p-4 shadow-sm fs-5">
             <form method="post" class="mb-4">
@@ -57,13 +60,7 @@
                         <input type="text" name="validation_freq" class="form-control" value="1">
                     </div>
 
-                    <!-- 第三列：模型權重儲存路徑 -->
-                    <div class="col-12 mb-3">
-                        <label class="form-label">Checkpoint 儲存路徑</label>
-                        <input type="text" name="checkpoint_path" class="form-control" value="./checkpoint/0_1000_04_29/weights_epoch_1000.h5">
-                    </div>
-
-                    <!-- 第四列：執行訓練按鈕 -->
+                    <!-- 第三列：執行訓練按鈕 -->
                     <div class="d-grid">
                         <button type="button" class="btn btn-primary btn-lg" id="run-train">▶️ 執行模型訓練</button>
                     </div>
@@ -89,11 +86,16 @@
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             const runTrainButton = document.getElementById('run-train');
+            const sshStatus = document.getElementById('ssh-status');
 
             const socket = new WebSocket("ws://" + window.location.host + "/ws/CMD/");
 
+            // 當 WebSocket 連線成功
             socket.onopen = function() {
-                console.log("WebSocket 已連線");
+                console.log("WebSocket 已連線，正在嘗試 SSH...");
+                sshStatus.innerHTML = `<span class="text-warning fw-bold">🟡 正在連接 SSH...</span>`;
+
+                // 發送 SSH 連線請求給後端
                 socket.send(JSON.stringify({
                     action: 'ssh_connect',
                     hostname: "{{ request.session.ssh_info.hostname }}",
@@ -103,26 +105,34 @@
                 }));
             };
 
+            // 從後端收到訊息
             socket.onmessage = function(event) {
                 const output = document.getElementById('output');
-                output.value += event.data + "\n";
+                const data = event.data;
 
-                // 執行結果自動捲動
+                // ✅ 檢查是否是 SSH 回覆
+                if (data.includes("SSH connected")) {
+                    sshStatus.innerHTML = `<span class="text-success fw-bold">🟢 SSH 已連線</span>`;
+                } else if (data.includes("SSH failed") || data.includes("SSH connection error")) {
+                    sshStatus.innerHTML = `<span class="text-danger fw-bold">🔴 SSH 連線失敗</span>`;
+                }
+
+                // 寫入執行結果
+                output.value += data + "\n";
                 output.scrollTop = output.scrollHeight;
 
-                // 收到表示訓練結束的關鍵字後，解除禁用並恢復狀態
-                if (event.data.includes("finish")) {
+                // 收到 finish 關鍵字
+                if (data.includes("finish")) {
                     runTrainButton.disabled = false;
                     runTrainButton.innerHTML = '▶️ 執行模型訓練';
                 }
             };
 
-            // 綁定其他按鈕事件
+            // 綁定按鈕
             runTrainButton.addEventListener('click', function() {
                 runTrainButton.disabled = true;
                 runTrainButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> 執行中...';
 
-                // 收集表單欄位資料
                 const form = document.querySelector('form');
                 const formData = new FormData(form);
                 const data = {
@@ -136,7 +146,6 @@
                     checkpoint_path: formData.get('checkpoint_path')
                 };
 
-                // 傳送資料到後端
                 socket.send(JSON.stringify(data));
             });
         });

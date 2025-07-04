@@ -28,11 +28,14 @@ class CMDConsumer(AsyncWebsocketConsumer):
 
             self.ssh = paramiko.SSHClient()
             self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-            self.ssh.connect(hostname=hostname, port=port, username=username, password=password)
-            if self.ssh is None:
-                await self.send("❌ 尚未建立 SSH 連線")
-            else:
-                await self.send("✅ SSH 連線成功！")
+
+            try:
+                self.ssh.connect(hostname=hostname, port=port, username=username, password=password)
+                await self.send("SSH connected")
+            except Exception as e:
+                print(f"❌ SSH 連線失敗: {e}")
+                await self.send("SSH failed")
+                self.ssh = None
 
         elif action == 'run-train':
             # 傳送開始訓練的通知訊息給前端
