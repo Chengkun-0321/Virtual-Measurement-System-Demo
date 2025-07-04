@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>模型訓練頁面</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body class="d-flex flex-column min-vh-100">
     {% include "blog/_navbar.html" %}
@@ -15,6 +16,8 @@
 
         <!-- 🔥 SSH 連線提示 -->
         <div id="ssh-status" class="text-center mb-3"></div>
+
+        
 
         <!-- 表單區塊包在 Bootstrap 卡片中 -->
         <div class="card p-4 shadow-sm fs-5">
@@ -68,8 +71,12 @@
             </form>
         </div>
 
+        <!-- 📈 即時訓練曲線 -->
+        <canvas id="trainingChart" height="100" class="mb-4"></canvas>
+        
+
         <!-- 執行結果區塊（改為 textarea 即時顯示） -->
-        <div class="card mt-5 shadow-sm">
+        <div class="card mt-5 shadow-sm" style="display:none;">
             <div class="card-header">
                 📤 執行結果
             </div>
@@ -89,6 +96,50 @@
             const sshStatus = document.getElementById('ssh-status');
 
             const socket = new WebSocket("ws://" + window.location.host + "/ws/CMD/");
+
+            // 初始化 Chart.js
+            const ctx = document.getElementById('trainingChart').getContext('2d');
+            const trainingChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [], // Epochs
+                    datasets: [
+                        {
+                            label: 'Loss',
+                            data: [],
+                            borderColor: 'blue',
+                            fill: false
+                        },
+                        {
+                            label: 'Val_Loss',
+                            data: [],
+                            borderColor: 'red',
+                            fill: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    animation: false, // ⚡️ 關閉動畫提升即時效率
+                    spanGaps: true,   // ⚡️ 允許跳過缺失點
+                    scales: {
+                        x: { 
+                            title: { display: true, text: 'Epoch' }
+                        },
+                        y: {
+                            title: { display: true, text: 'Loss Value' },
+                            beginAtZero: false,
+                            ticks: {
+                                autoSkip: true,
+                                precision: 2, // 小數點位數
+                                callback: function(value) {
+                                    return value.toFixed(2); // 顯示 2 位小數
+                                }
+                            }
+                        }
+                    }
+                }
+            });
 
             // 當 WebSocket 連線成功
             socket.onopen = function() {
@@ -110,12 +161,52 @@
                 const output = document.getElementById('output');
                 const data = event.data;
 
-                // ✅ 檢查是否是 SSH 回覆
+                // ✅ SSH 狀態更新
                 if (data.includes("SSH connected")) {
                     sshStatus.innerHTML = `<span class="text-success fw-bold">🟢 SSH 已連線</span>`;
                 } else if (data.includes("SSH failed") || data.includes("SSH connection error")) {
                     sshStatus.innerHTML = `<span class="text-danger fw-bold">🔴 SSH 連線失敗</span>`;
                 }
+
+                // ✅ 更新訓練曲線（分開解析 loss 與 val_loss）
+                window.allEpochs = window.allEpochs || [];
+                window.allLosses = window.allLosses || [];
+                window.allValLosses = window.allValLosses || [];
+
+                // 嘗試抓取 Epoch 編號
+                let epochMatch = data.match(/Epoch\s+(\d+)\/\d+/);
+                if (epochMatch) {
+                    const epoch = parseInt(epochMatch[1]);
+                    window.allEpochs.push(epoch);
+                }
+
+                // 解析 loss
+                let lossMatch = data.match(/loss:\s*([\d.]+)/);
+                if (lossMatch) {
+                    const loss = parseFloat(lossMatch[1]);
+                    if (window.allLosses.length < window.allEpochs.length) {
+                        window.allLosses.push(loss);
+                    } else {
+                        window.allLosses[window.allEpochs.length - 1] = loss;
+                    }
+                    trainingChart.data.datasets[0].data = window.allLosses.slice(-50);
+                }
+
+                // 解析 val_loss
+                /*
+                let valLossMatch = data.match(/val_loss:\s*([\d.]+)/);
+                if (valLossMatch) {
+                    const valLoss = parseFloat(valLossMatch[1]);
+                    if (window.allValLosses.length < window.allEpochs.length) {
+                        window.allValLosses.push(valLoss);
+                    } else {
+                        window.allValLosses[window.allEpochs.length - 1] = valLoss;
+                    }
+                    trainingChart.data.datasets[1].data = window.allValLosses.slice(-50);
+                }*/
+
+                trainingChart.data.labels = window.allEpochs.slice(-50);
+                trainingChart.update();
 
                 // 寫入執行結果
                 output.value += data + "\n";
@@ -145,6 +236,12 @@
                     validation_freq: formData.get('validation_freq'),
                     checkpoint_path: formData.get('checkpoint_path')
                 };
+
+                // 清空舊曲線
+                trainingChart.data.labels = [];
+                trainingChart.data.datasets.forEach(ds => ds.data = []);
+                window.allValLosses = [];
+                trainingChart.update();
 
                 socket.send(JSON.stringify(data));
             });
