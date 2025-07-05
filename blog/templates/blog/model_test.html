@@ -67,7 +67,9 @@
 
         <!-- 執行結果區塊 -->
         <div class="card mt-5 shadow-sm" style="display:none;">
-            <div class="card-header">📤 執行結果</div>
+            <div class="card-header">
+                📤 執行結果
+            </div>
             <div class="card-body">
                 <textarea id="output" class="form-control bg-light" rows="15" style="resize: none;" readonly></textarea>
             </div>
@@ -90,7 +92,7 @@
 
             socket.onopen = function() {
                 console.log("WebSocket 已連線，正在嘗試 SSH...");
-                sshStatus.innerHTML = `<span class="text-warning fw-bold">🟡 正在連接 SSH...</span>`;
+                sshStatus.innerHTML = `<span class="text-warning fw-bold">🟡 伺服器 正在連接中...</span>`;
 
                 socket.send(JSON.stringify({
                     action: 'ssh_connect',
@@ -106,15 +108,17 @@
 
                 // 顯示 SSH 連線狀態
                 if (data.includes("SSH connected")) {
-                    sshStatus.innerHTML = `<span class="text-success fw-bold">🟢 SSH 已連線</span>`;
+                    sshStatus.innerHTML = `<span class="text-success fw-bold">🟢 伺服器 已連線</span>`;
                 } else if (data.includes("SSH failed") || data.includes("SSH connection error")) {
-                    sshStatus.innerHTML = `<span class="text-danger fw-bold">🔴 SSH 連線失敗</span>`;
+                    sshStatus.innerHTML = `<span class="text-danger fw-bold">🔴 伺服器 連線失敗</span>`;
                 }
 
                 // 顯示結果區塊（第一次時）
+                /*
                 if (resultCard.style.display === 'none') {
                     resultCard.style.display = 'block';
                 }
+                */
 
                 // 顯示測試輸出內容
                 outputArea.value += data + "\n";
