@@ -12,12 +12,13 @@
         <!-- 頁面標題 -->
         <h2 class="mb-4 text-center">🧪 模型測試頁面</h2>
 
+        <!-- 🔥 SSH 連線提示 -->
+        <div id="ssh-status" class="text-center mb-3"></div>
+
         <!-- 表單區塊 -->
         <div class="card p-4 shadow-sm fs-5">
             <form method="post">
                 {% csrf_token %}
-
-                <!-- 模型選擇與檢查點選擇 -->
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label class="form-label">選擇模型架構</label>
@@ -64,11 +65,9 @@
             </form>
         </div>
 
-        <!-- 執行結果區塊（改為 textarea 即時顯示） -->
-        <div class="card mt-5 shadow-sm">
-            <div class="card-header">
-                📤 執行結果
-            </div>
+        <!-- 執行結果區塊 -->
+        <div class="card mt-5 shadow-sm" style="display:none;">
+            <div class="card-header">📤 執行結果</div>
             <div class="card-body">
                 <textarea id="output" class="form-control bg-light" rows="15" style="resize: none;" readonly></textarea>
             </div>
@@ -79,14 +78,20 @@
             <a href="/" class="btn btn-secondary btn-lg">🔙 返回首頁</a>
         </div>
     </div>
+
     <script>
         document.addEventListener("DOMContentLoaded", function() {
-            const runTrainButton = document.getElementById('run-test');
+            const runTestButton = document.getElementById('run-test');
+            const sshStatus = document.getElementById('ssh-status');
+            const outputArea = document.getElementById('output');
+            const resultCard = outputArea.closest('.card');
 
             const socket = new WebSocket("ws://" + window.location.host + "/ws/CMD/");
 
             socket.onopen = function() {
-                console.log("WebSocket 已連線");
+                console.log("WebSocket 已連線，正在嘗試 SSH...");
+                sshStatus.innerHTML = `<span class="text-warning fw-bold">🟡 正在連接 SSH...</span>`;
+
                 socket.send(JSON.stringify({
                     action: 'ssh_connect',
                     hostname: "{{ request.session.ssh_info.hostname }}",
@@ -97,25 +102,34 @@
             };
 
             socket.onmessage = function(event) {
-                const output = document.getElementById('output');
-                output.value += event.data + "\n";
+                const data = event.data;
 
-                // 執行結果自動捲動
-                output.scrollTop = output.scrollHeight;
+                // 顯示 SSH 連線狀態
+                if (data.includes("SSH connected")) {
+                    sshStatus.innerHTML = `<span class="text-success fw-bold">🟢 SSH 已連線</span>`;
+                } else if (data.includes("SSH failed") || data.includes("SSH connection error")) {
+                    sshStatus.innerHTML = `<span class="text-danger fw-bold">🔴 SSH 連線失敗</span>`;
+                }
 
-                // 收到表示測試結束的關鍵字後，解除禁用並恢復狀態
-                if (event.data.includes("Heatmaps ok")) {
-                    runTrainButton.disabled = false;
-                    runTrainButton.innerHTML = '▶️ 執行模型測試';
+                // 顯示結果區塊（第一次時）
+                if (resultCard.style.display === 'none') {
+                    resultCard.style.display = 'block';
+                }
+
+                // 顯示測試輸出內容
+                outputArea.value += data + "\n";
+                outputArea.scrollTop = outputArea.scrollHeight;
+
+                if (data.includes("Heatmaps ok")) {
+                    runTestButton.disabled = false;
+                    runTestButton.innerHTML = '▶️ 執行模型測試';
                 }
             };
 
-            // 綁定其他按鈕事件
-            runTrainButton.addEventListener('click', function() {
-                runTrainButton.disabled = true;
-                runTrainButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> 執行中...';
-                
-                // 收集表單欄位資料
+            runTestButton.addEventListener('click', function() {
+                runTestButton.disabled = true;
+                runTestButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> 執行中...';
+
                 const form = document.querySelector('form');
                 const formData = new FormData(form);
                 const data = {
@@ -128,7 +142,9 @@
                     boundary_lower: formData.get('boundary_lower')
                 };
 
-                // 傳送資料到後端
+                outputArea.value = ""; // 清空之前的輸出
+                resultCard.style.display = 'block'; // 顯示結果區塊
+
                 socket.send(JSON.stringify(data));
             });
         });
