@@ -39,7 +39,7 @@
 
                     <div class="col-md-6 mb-3">
                         <label class="form-label">選擇 Checkpoint 檔案</label>
-                        <input type="text" name="checkpoint_path" class="form-control" value="checkpoints/mamba_valmse_0.5296.h5">
+                        <input type="text" name="checkpoint_path" class="form-control" value="mamba_valmse_0.5296.h5">
                     </div>
 
                     <div class="col-md-6 mb-3">
@@ -64,6 +64,20 @@
                 </div>
             </form>
         </div>
+
+        <!-- 📊 測試結果圖片 -->
+        <div id="result-images" class="row mt-4" >
+            <div class="col-md-6 text-center">
+                <h5>混淆矩陣</h5>
+                <img id="confusion-matrix" src="" class="img-fluid rounded border shadow-sm" alt="混淆矩陣">
+            </div>
+            <div class="col-md-6 text-center">
+                <h5>真實 vs 預測圖</h5>
+                <img id="ground-truth" src="" class="img-fluid rounded border shadow-sm" alt="真實預測圖">
+            </div>
+        </div>
+        <img src="/static/plt/mamba_valmse_0.5296/混淆矩陣.png">
+
 
         <!-- 執行結果區塊 -->
         <div class="card mt-5 shadow-sm" >
@@ -127,7 +141,14 @@
                 if (data.includes("finsh test!")) {
                     runTestButton.disabled = false;
                     runTestButton.innerHTML = '▶️ 執行模型測試';
-                }
+
+                    // 🖼 顯示測試結果圖片
+                    const checkpointPath = document.querySelector('input[name="checkpoint_path"]').value;
+                    const fileName = checkpointPath.split('/').pop().replace('.h5', ''); // 取得 mamba_valmse_0.5296
+                    document.getElementById('confusion-matrix').src = `/static/plt/${fileName}/混淆矩陣.png`;
+                    document.getElementById('ground-truth').src = `/static/plt/${fileName}/ground_truth.png`;
+                    document.getElementById('result-images').style.display = 'flex';
+                } 
             };
 
             runTestButton.addEventListener('click', function() {
