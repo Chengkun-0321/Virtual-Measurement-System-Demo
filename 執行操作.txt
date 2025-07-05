@@ -73,11 +73,14 @@ deactivate -> 退出虛擬環境
     python manage.py runserver
 
 
-# 執行
+# 本機執行
 1. 進到live_demo資料夾裡
 2. Daphne 啟動 python -m daphne mysite.asgi:application;  執行程式
 3. 終端機輸入 python manage.py runserver
-
 2+3 執行指令結合：python -m daphne -p 8000 mysite.asgi:application
 
-http://127.0.0.1:8000/
+連線網址--> http://127.0.0.1:8000/
+
+# 伺服器執行
+終端機輸入 gunicorn mysite.wsgi:application --bind 0.0.0.0:800
+連線網址--> http://140.137.41.136:7780/
