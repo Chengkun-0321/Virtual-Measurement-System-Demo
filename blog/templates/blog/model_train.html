@@ -18,62 +18,77 @@
         <div id="ssh-status" class="text-center mb-3"></div>
 
         <!-- 表單區塊包在 Bootstrap 卡片中 -->
-        <div class="card p-4 shadow-sm fs-5">
-            <form method="post" class="mb-4">
-                {% csrf_token %}  <!-- CSRF 保護 Token -->
+        <div class="row align-items-stretch">
+            <!-- 左側表單 -->
+            <div class="col-md-6" style="flex: 0 0 60%;">
+                <div class="card p-4 shadow-sm fs-5 h-100">
+                    <h5 class="card-title text-center">訓練參數設定</h5>
+                    <form method="post" class="mb-4">
+                        {% csrf_token %}
+                        <div class="row">
+                            <!-- 第一列：模型選擇與資料來源 -->
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">選擇模型架構</label>
+                                <select name="model" class="form-select">
+                                    <option value="Mamba">Mamba</option>
+                                    <option value="ResNet">ResNet</option>
+                                    <option value="LSTM">LSTM</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">訓練資料來源</label>
+                                <select name="dataset" class="form-select">
+                                    <option value="PETBottle">PETBottle</option>
+                                    <option value="TFT">TFT</option>
+                                </select>
+                            </div>
 
-                <div class="row">
-                    <!-- 第一列：模型選擇與資料來源 -->
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">選擇模型架構</label>
-                        <select name="model" class="form-select">
-                            <option value="Mamba">Mamba</option>
-                            <option value="ResNet">ResNet</option>
-                            <option value="LSTM">LSTM</option>
-                        </select>
-                    </div>
-                    
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">訓練資料來源</label>
-                        <select name="dataset" class="form-select">
-                            <option value="PETBottle">PETBottle</option>
-                            <option value="TFT">TFT</option>
-                        </select>
-                    </div>
+                            <!-- 第二列：epochs、batch_size、learning_rate、validation_freq參數 -->
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label">epochs</label>
+                                <input type="text" name="epochs" class="form-control" value="10">
+                            </div>
 
-                    <!-- 第二列：epochs、batch_size、learning_rate、validation_freq參數 -->
-                    <div class="col-md-3 mb-3">
-                        <label class="form-label">epochs</label>
-                        <input type="text" name="epochs" class="form-control" value="10">
-                    </div>
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label">batch_size</label>
+                                <input type="text" name="batch_size" class="form-control" value="129">
+                            </div>
 
-                    <div class="col-md-3 mb-3">
-                        <label class="form-label">batch_size</label>
-                        <input type="text" name="batch_size" class="form-control" value="129">
-                    </div>
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label">learning_rate</label>
+                                <input type="text" name="learning_rate" class="form-control" value="0.0001">
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label">validation_freq</label>
+                                <input type="text" name="validation_freq" class="form-control" value="1">
+                            </div>
 
-                    <div class="col-md-3 mb-3">
-                        <label class="form-label">learning_rate</label>
-                        <input type="text" name="learning_rate" class="form-control" value="0.0001">
-                    </div>
-                    <div class="col-md-3 mb-3">
-                        <label class="form-label">validation_freq</label>
-                        <input type="text" name="validation_freq" class="form-control" value="1">
-                    </div>
-
-                    <!-- 第三列：執行訓練按鈕 -->
-                    <div class="d-grid">
-                        <button type="button" class="btn btn-primary btn-lg" id="run-train">▶️ 執行模型訓練</button>
-                    </div>
+                            <!-- 執行按鈕 -->
+                            <div class="d-grid">
+                                <button type="button" class="btn btn-primary btn-lg" id="run-train">▶️ 執行模型訓練</button>
+                            </div>
+                        </div>
+                    </form>
                 </div>
-            </form>
+            </div>
+
+            <!-- 右側最佳結果 -->
+            <div class="col-md-6" style="flex: 0 0 40%;">
+                <div class="card p-4 shadow-sm fs-5 h-100 text-center">
+                    <h5 class="card-title">📊 本次訓練最佳結果</h5>
+                    <p id="best-result" class="fs-5">
+                        尚未開始訓練...
+                    </p>
+                </div>
+            </div>
         </div>
 
         <!-- 📈 即時訓練曲線 -->
+        <br>
         <canvas id="trainingChart" height="100" class="mb-4"></canvas>
         
 
-        <!-- 執行結果區塊（改為 textarea 即時顯示） -->
+        <!-- 執行結果區塊（改為 textarea 即時顯示）-->
         <div class="card mt-5 shadow-sm" style="display:none;">
             <div class="card-header">
                 📤 執行結果
@@ -108,12 +123,12 @@
                             borderColor: 'blue',
                             fill: false
                         },
-                        {
+                        /*{
                             label: 'Val_Loss',
                             data: [],
                             borderColor: 'red',
                             fill: false
-                        }
+                        }*/
                     ]
                 },
                 options: {
@@ -212,6 +227,23 @@
 
                 // 收到 finish 關鍵字
                 if (data.includes("finsh train!")) {
+                    const text = output.value;
+                    const epoch = text.match(/最佳 Epoch[:：]\s*(\d+)/)?.[1] || '-';
+                    const val_loss = text.match(/val_loss[:：]\s*([\d.]+)/)?.[1] || '-';
+                    const val_mse = text.match(/val_mse\s*[:：]\s*([\d.]+)/)?.[1] || '-';
+                    const val_mae = text.match(/val_mae\s*[:：]\s*([\d.]+)/)?.[1] || '-';
+                    const val_mape = text.match(/val_mape[:：]\s*([\d.]+)/)?.[1] || '-';
+                     const modelPath = text.match(/已儲存最佳模型[:：]\s*checkpoints\/(.+\.h5)/)?.[1] || '未知';
+
+                    document.getElementById('best-result').innerHTML = `
+                        Epoch: ${epoch}<br>
+                        val_loss: ${parseFloat(val_loss).toFixed(4)}<br>
+                        val_mse: ${parseFloat(val_mse).toFixed(4)}<br>
+                        val_mae: ${parseFloat(val_mae).toFixed(4)}<br>
+                        val_mape: ${parseFloat(val_mape).toFixed(4)}<br><br>
+                        <b>已儲存最佳模型：${modelPath}</b>
+                    `;
+
                     runTrainButton.disabled = false;
                     runTrainButton.innerHTML = '▶️ 執行模型訓練';
                 }
