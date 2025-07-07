@@ -6,9 +6,10 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('ping/', ping_test, name='ping_test'),
-    path('', views.home, name='home'),                         # 首頁
-    path('train/', views.run_mamba_remote, name='train'),      # 模型訓練頁
-    path('test/', views.test_model, name='test'),              # 測試模型頁
-    path('results/', views.show_results, name='results'),      # 顯示結果頁
+    path('', views.home, name='home'),                             # 首頁
+    path('train/', views.run_mamba_remote, name='train'),          # 模型訓練頁
+    path('test/', views.test_model, name='test'),                  # 測試模型頁
+    path('results/', views.show_results, name='results'),          # 顯示結果頁
+    path('models/', views.manage_models, name='models'),           # 模型管理頁
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

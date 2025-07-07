@@ -152,10 +152,41 @@ class CMDConsumer(AsyncWebsocketConsumer):
                 "url": media_url
             }))
 
+        elif action == 'list-models':
+            # 取得模型檔案列表
+            checkpoint_dir = "/home/vms/Virtual_Measurement_System_model/Model_code/checkpoints/"
+            cmd = f"ls {checkpoint_dir}"
+
+            try:
+                stdin, stdout, stderr = self.ssh.exec_command(cmd)
+                files = stdout.read().decode().splitlines()
+                error = stderr.read().decode()
+
+                if error:
+                    await self.send(json.dumps({
+                        "type": "model_list",
+                        "status": "error",
+                        "message": error
+                    }))
+                else:
+                    model_files = [f for f in files if f.endswith(".pt") or f.endswith(".pth")]
+                    await self.send(json.dumps({
+                        "type": "model_list",
+                        "status": "success",
+                        "files": model_files
+                    }))
+            except Exception as e:
+                await self.send(json.dumps({
+                    "type": "model_list",
+                    "status": "error",
+                    "message": str(e)
+                }))
+
         elif action == 'list-heatmap-files':
             folder = data.get("folder")
             print(f"🧪 收到 list-heatmap-files 請求，資料夾：{folder}")
             await self.send_heatmap_filenames(folder)
+            
         elif action == 'list-results':
             await self.send_all_result_folders()
 

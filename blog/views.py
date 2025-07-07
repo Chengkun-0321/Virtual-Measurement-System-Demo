@@ -50,12 +50,12 @@ def run_mamba_remote(request):
         username = request.POST.get('username') or request.session.get('username')     # 使用者帳號
         password = request.POST.get('password') or request.session.get('password')     # 密碼
 
-        model = request.POST['model']               # 選擇的模型架構名稱
-        dataset = request.POST['dataset']           # 資料來源
-        mean = request.POST['mean']                 # 中心值
-        upper = request.POST['boundary_upper']      # 上界
-        lower = request.POST['boundary_lower']      # 下界
-        checkpoint = request.POST['checkpoint_path'] # 權重檔路徑
+        model = request.POST['model']                   # 選擇的模型架構名稱
+        dataset = request.POST['dataset']               # 資料來源
+        mean = request.POST['mean']                     # 中心值
+        upper = request.POST['boundary_upper']          # 上界
+        lower = request.POST['boundary_lower']          # 下界
+        checkpoint = request.POST['checkpoint_path']    # 權重檔路徑
 
         # 根據 model 名稱決定路徑與環境
         if model == "Mamba":
@@ -140,3 +140,7 @@ def ping_test(request):
             return JsonResponse({'status': 'success', 'message': '✅ 成功連線！'})
         except Exception as e:
             return JsonResponse({'status': 'error', 'message': f'❌ 連線失敗：{str(e)}'})
+        
+# 模型管理畫面
+def manage_models(request):
+    return render(request, 'blog/model_manage.html')
