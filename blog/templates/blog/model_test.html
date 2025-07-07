@@ -15,59 +15,75 @@
         <!-- SSH 連線提示 -->
         <div id="ssh-status" class="text-center mb-3"></div>
 
-        <!-- 表單區塊 -->
-        <div class="card p-4 shadow-sm fs-5">
-            <form method="post">
-                {% csrf_token %}
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">選擇模型架構</label>
-                        <select name="model" class="form-select">
-                            <option value="Mamba">Mamba</option>
-                            <option value="ResNet">ResNet</option>
-                            <option value="LSTM">LSTM</option>
-                        </select>
-                    </div>
+        <!-- 表單與混淆矩陣區塊 -->
+        <div class="row">
+            <div class="col-md-6" style="flex: 0 0 60%;">
+                <div class="card p-4 shadow-sm fs-5 d-flex justify-content-center" style="height: 450px;">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-md-6 mb-4">
+                                <label class="form-label">選擇模型架構</label>
+                                <select name="model" class="form-select">
+                                    <option value="Mamba">Mamba</option>
+                                    <option value="ResNet">ResNet</option>
+                                    <option value="LSTM">LSTM</option>
+                                </select>
+                            </div>
 
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">測試資料來源</label>
-                        <select name="dataset" class="form-select">
-                            <option value="PETBottle">PETBottle</option>
-                            <option value="TFT">TFT</option>
-                        </select>
-                    </div>
+                            <div class="col-md-6 mb-4">
+                                <label class="form-label">測試資料來源</label>
+                                <select name="dataset" class="form-select">
+                                    <option value="PETBottle">PETBottle</option>
+                                    <option value="TFT">TFT</option>
+                                </select>
+                            </div>
 
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">選擇 Checkpoint 檔案</label>
-                        <input type="text" name="checkpoint_path" class="form-control" value="checkpoint/0_1000_04_29/weights_epoch_1000.h5">
-                    </div>
+                            <div class="col-md-6 mb-4">
+                                <label class="form-label">選擇 Checkpoint 檔案</label>
+                                <input type="text" name="checkpoint_path" class="form-control" value="mamba_valmse_0.5296.h5">
+                            </div>
 
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">mean</label>
-                        <input type="text" name="mean" class="form-control" value="65.0">
-                    </div>
+                            <div class="col-md-6 mb-4">
+                                <label class="form-label">mean</label>
+                                <input type="text" name="mean" class="form-control" value="65.0">
+                            </div>
 
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">boundary_upper</label>
-                        <input type="text" name="boundary_upper" class="form-control" value="70.0">
-                    </div>
+                            <div class="col-md-6 mb-4">
+                                <label class="form-label">boundary_upper</label>
+                                <input type="text" name="boundary_upper" class="form-control" value="70.0">
+                            </div>
 
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">boundary_lower</label>
-                        <input type="text" name="boundary_lower" class="form-control" value="60.0">
-                    </div>
+                            <div class="col-md-6 mb-4">
+                                <label class="form-label">boundary_lower</label>
+                                <input type="text" name="boundary_lower" class="form-control" value="60.0">
+                            </div>
+                        </div>
+
+                        <!-- 執行按鈕 -->
+                        <div class="d-grid">
+                            <button type="button" class="btn btn-success btn-lg" id="run-test">▶️ 執行模型測試</button>
+                        </div>
+                    </form>
                 </div>
-
-                <!-- 執行按鈕 -->
-                <div class="d-grid">
-                    <button type="button" class="btn btn-success btn-lg" id="run-test">▶️ 執行模型測試</button>
-                </div>
-            </form>
+            </div>
+            <div class="col-md-6 text-center" style="flex: 0 0 40%;">
+                <h5>混淆矩陣</h5>
+                <img id="confusion-matrix" src="" class="img-fluid rounded border shadow-sm" alt="混淆矩陣" style="width: 96.5%;">
+            </div>
+        </div>
+        
+        <br>
+        <div class="text-center">
+                <h5>真實 vs 預測圖</h5>
+                <img id="ground-truth" src="" class="img-fluid rounded border shadow-sm" alt="真實預測圖" style="width: 90%;">
         </div>
 
         <!-- 執行結果區塊 -->
-        <div class="card mt-5 shadow-sm" style="display:none;">
-            <div class="card-header">📤 執行結果</div>
+        <div class="card mt-5 shadow-sm" id="output-card">
+            <div class="card-header">
+                📤 執行結果
+            </div>
             <div class="card-body">
                 <textarea id="output" class="form-control bg-light" rows="15" style="resize: none;" readonly></textarea>
             </div>
@@ -90,7 +106,7 @@
 
             socket.onopen = function() {
                 console.log("WebSocket 已連線，正在嘗試 SSH...");
-                sshStatus.innerHTML = `<span class="text-warning fw-bold">🟡 正在連接 SSH...</span>`;
+                sshStatus.innerHTML = `<span class="text-warning fw-bold">🟡 伺服器 正在連接中...</span>`;
 
                 socket.send(JSON.stringify({
                     action: 'ssh_connect',
@@ -106,24 +122,33 @@
 
                 // 顯示 SSH 連線狀態
                 if (data.includes("SSH connected")) {
-                    sshStatus.innerHTML = `<span class="text-success fw-bold">🟢 SSH 已連線</span>`;
+                    sshStatus.innerHTML = `<span class="text-success fw-bold">🟢 伺服器 已連線</span>`;
                 } else if (data.includes("SSH failed") || data.includes("SSH connection error")) {
-                    sshStatus.innerHTML = `<span class="text-danger fw-bold">🔴 SSH 連線失敗</span>`;
+                    sshStatus.innerHTML = `<span class="text-danger fw-bold">🔴 伺服器 連線失敗</span>`;
                 }
 
                 // 顯示結果區塊（第一次時）
+                /*
                 if (resultCard.style.display === 'none') {
                     resultCard.style.display = 'block';
                 }
+                */
 
                 // 顯示測試輸出內容
                 outputArea.value += data + "\n";
                 outputArea.scrollTop = outputArea.scrollHeight;
 
-                if (data.includes("Heatmaps ok")) {
+                if (data.includes("finsh test!")) {
                     runTestButton.disabled = false;
                     runTestButton.innerHTML = '▶️ 執行模型測試';
-                }
+
+                    // 顯示測試結果圖片
+                    const checkpointPath = document.querySelector('input[name="checkpoint_path"]').value;
+                    const fileName = checkpointPath.split('/').pop().replace('.h5', ''); // 取得 mamba_valmse_0.5296
+                    document.getElementById('confusion-matrix').src = `/static/plt/${fileName}/混淆矩陣.png`;
+                    document.getElementById('ground-truth').src = `/static/plt/${fileName}/ground_truth.png`;
+                    document.getElementById('result-images').style.display = 'flex';
+                } 
             };
 
             runTestButton.addEventListener('click', function() {
@@ -143,8 +168,6 @@
                 };
 
                 outputArea.value = ""; // 清空之前的輸出
-                resultCard.style.display = 'block'; // 顯示結果區塊
-
                 socket.send(JSON.stringify(data));
             });
         });

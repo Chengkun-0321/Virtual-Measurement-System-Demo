@@ -20,10 +20,12 @@ db.sqlite3
 # 忽略這兩個資料夾裡的所有檔案
 static/heatmaps/*
 static/trainplot/*
+static/plt/*
 
 # 但保留 .gitkeep 檔案
 !static/heatmaps/.gitkeep
 !static/trainplot/.gitkeep
+!static/plt/.gitkeep
 
 # testenv虛擬環境
 testenv/
