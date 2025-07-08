@@ -1,0 +1,27 @@
+掛載伺服器上要顯示的圖片
+1.安裝
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+brew install --cask macfuse
+brew install gromgit/fuse/sshfs-mac
+
+2.建立要掛載的資料夾
+mkdir -p ~/vms_mount/heatmaps
+mkdir -p ~/vms_mount/trainplot
+mkdir -p ~/vms_mount/plt
+
+3.掛載遠端資料夾到本機
+sshfs vms@140.137.41.136:/home/vms/Virtual_Measurement_System_model/HMamba_code/result_plot/result_heatmaps ~/vms_mount/heatmaps
+sshfs vms@140.137.41.136:/home/vms/Virtual_Measurement_System_model/HMamba_code/result_plot/Training_History_Plot ~/vms_mount/trainplot
+sshfs vms@140.137.41.136:/home/vms/Virtual_Measurement_System_model/Model_code/Training_History_Plot ~/vms_mount/plt
+
+4.進到 Django 專案的 static/ 目錄，移除舊的資料夾（如果有）
+cd static
+
+5.移除原本的資料夾（非連結）
+rm -rf heatmaps trainplot
+rm -rf plt
+
+6.建立符號連結 (symlink) 到掛載點
+ln -s ~/vms_mount/heatmaps heatmaps
+ln -s ~/vms_mount/trainplot trainplot
+ln -s ~/vms_mount/plt plt
