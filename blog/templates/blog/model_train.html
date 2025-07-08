@@ -8,13 +8,12 @@
 </head>
 <body class="d-flex flex-column min-vh-100">
     {% include "blog/_navbar.html" %}
-    <!-- Bootstrap 容器：集中內容排版 -->
     <div class="container">
         <br>
         <!-- 頁面標題 -->
         <h2 class="mb-4 text-center">🚀 模型訓練頁面</h2>
 
-        <!-- SSH 連線提示 -->
+        <!-- 伺服器 連線提示 -->
         <div id="ssh-status" class="text-center mb-3"></div>
 
         <!-- 表單區塊包在 Bootstrap 卡片中 -->
@@ -83,7 +82,7 @@
             </div>
         </div>
 
-        <!-- 📈 即時訓練曲線 -->
+        <!-- 即時訓練曲線 -->
         <br>
         <canvas id="trainingChart" height="100" class="mb-4"></canvas>
         
@@ -174,14 +173,14 @@
                 const output = document.getElementById('output');
                 const data = event.data;
 
-                // ✅ SSH 狀態更新
+                // 顯示 顯示伺服器成功/失敗
                 if (data.includes("SSH connected")) {
                     sshStatus.innerHTML = `<span class="text-success fw-bold">🟢 SSH 已連線</span>`;
                 } else if (data.includes("SSH failed") || data.includes("SSH connection error")) {
                     sshStatus.innerHTML = `<span class="text-danger fw-bold">🔴 SSH 連線失敗</span>`;
                 }
 
-                // ✅ 更新訓練曲線（分開解析 loss 與 val_loss）
+                // 更新訓練曲線（分開解析 loss 與 val_loss）
                 window.allEpochs = window.allEpochs || [];
                 window.allLosses = window.allLosses || [];
                 window.allValLosses = window.allValLosses || [];
@@ -249,7 +248,7 @@
                 }
             };
 
-            // 綁定按鈕
+            // 執行按鈕動作
             runTrainButton.addEventListener('click', function() {
                 runTrainButton.disabled = true;
                 runTrainButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> 執行中...';
