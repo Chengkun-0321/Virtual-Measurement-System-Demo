@@ -1,3 +1,4 @@
+import os
 from django.shortcuts import render
 import paramiko  # 用來做 SSH
 from django.http import JsonResponse, HttpResponse
@@ -104,7 +105,14 @@ def run_mamba_remote(request):
 
 # 測試模型畫面
 def test_model(request):
-    return render(request, 'blog/model_test.html')  # 測試模型頁（可以空的先）
+    # 掃描 static/plt 資料夾取得資料夾名稱列表
+    static_dir = os.path.join('static', 'plt')
+    try:
+        checkpoint_folders = [name for name in os.listdir(static_dir) if os.path.isdir(os.path.join(static_dir, name))]
+    except FileNotFoundError:
+        checkpoint_folders = []
+
+    return render(request, 'blog/model_test.html', {'checkpoint_folders': checkpoint_folders})
 
 def show_results(request):
     return render(request, 'blog/results.html')  # 顯示結果頁（也可以先空白）

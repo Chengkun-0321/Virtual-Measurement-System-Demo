@@ -19,6 +19,7 @@
         <div class="row">
             <div class="col-md-6" style="flex: 0 0 60%;">
                 <div class="card p-4 shadow-sm fs-5 d-flex justify-content-center" style="height: 450px;">
+                    <h5 class="card-title text-center">測試參數設定及權重選擇</h5>
                     <form method="post">
                         {% csrf_token %}
                         <div class="row">
@@ -41,7 +42,11 @@
 
                             <div class="col-md-6 mb-4">
                                 <label class="form-label">選擇 Checkpoint 檔案</label>
-                                <input type="text" name="checkpoint_path" class="form-control" value="mamba_valmse_0.5296.h5">
+                                <select name="checkpoint_path" class="form-select">
+                                    {% for folder in checkpoint_folders %}
+                                    <option value="{{ folder }}">{{ folder }}</option>
+                                    {% endfor %}
+                                </select>
                             </div>
 
                             <div class="col-md-6 mb-4">
@@ -69,18 +74,18 @@
             </div>
             <div class="col-md-6 text-center" style="flex: 0 0 40%;">
                 <h5>混淆矩陣</h5>
-                <img id="confusion-matrix" src="" class="img-fluid rounded border shadow-sm" alt="混淆矩陣" style="width: 96.5%;">
+                <img id="confusion-matrix" src="" class="img-fluid rounded border shadow-sm" alt="" style="width: 96.5%;">
             </div>
         </div>
         
         <br>
         <div class="text-center">
                 <h5>真實 vs 預測圖</h5>
-                <img id="ground-truth" src="" class="img-fluid rounded border shadow-sm" alt="真實預測圖" style="width: 90%;">
+                <img id="ground-truth" src="" class="img-fluid rounded border shadow-sm" alt="" style="width: 90%;">
         </div>
 
         <!-- 執行結果區塊 -->
-        <div class="card mt-5 shadow-sm" id="output-card">
+        <div class="card mt-5 shadow-sm" id="output-card" style="display:none;">
             <div class="card-header">
                 📤 執行結果
             </div>
@@ -143,10 +148,10 @@
                     runTestButton.innerHTML = '▶️ 執行模型測試';
 
                     // 顯示測試結果圖片
-                    const checkpointPath = document.querySelector('input[name="checkpoint_path"]').value;
-                    const fileName = checkpointPath.split('/').pop().replace('.h5', ''); // 取得 mamba_valmse_0.5296
-                    document.getElementById('confusion-matrix').src = `/static/plt/${fileName}/混淆矩陣.png`;
-                    document.getElementById('ground-truth').src = `/static/plt/${fileName}/ground_truth.png`;
+                    const checkpointPath = document.querySelector('select[name="checkpoint_path"]').value;
+                    const folderName = checkpointPath; // 下拉選單已直接提供資料夾名稱
+                    document.getElementById('confusion-matrix').src = `/static/plt/${folderName}/混淆矩陣.png`;
+                    document.getElementById('ground-truth').src = `/static/plt/${folderName}/ground_truth.png`;
                     document.getElementById('result-images').style.display = 'flex';
                 } 
             };

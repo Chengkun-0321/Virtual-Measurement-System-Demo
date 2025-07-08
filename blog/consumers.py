@@ -137,7 +137,7 @@ class CMDConsumer(AsyncWebsocketConsumer):
                 f"python -u {self.py_file} "
                 f"--test_x_path './process_data_Splitting/testing_data/{self.dataset}/cnn-2d_2020-09-09_11-45-24_x.npy' "
                 f"--test_y_path './process_data_Splitting/testing_data/{self.dataset}/cnn-2d_2020-09-09_11-45-24_y.npy' "
-                f"--checkpoint_path checkpoints/{self.checkpoint_path} "
+                f"--checkpoint_path checkpoints/{self.checkpoint_path}.h5 "
                 f"--mean '{self.mean}' "
                 f"--boundary_upper '{self.boundary_upper}' "
                 f"--boundary_lower {self.boundary_lower}"
