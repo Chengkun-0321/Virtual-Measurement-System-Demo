@@ -1,6 +1,6 @@
 mysite/            ← 主專案設定資料夾（不要刪！）
 ├── __init__.py
-├── settings.py    ← 🎯 設定全部 app / 資料庫 / 時區 / 模板路徑...
-├── urls.py        ← 🌐 全站路由，整合各個 app 的入口
+├── settings.py    ← 設定全部 app / 資料庫 / 時區 / 模板路徑...
+├── urls.py        ← 全站路由，整合各個 app 的入口
 ├── wsgi.py        ← 部署伺服器（傳統部署用）
 └── asgi.py        ← 支援 async 的部署伺服器（如 WebSocket）

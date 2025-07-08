@@ -8,8 +8,12 @@ blog/
 │   └── __init__.py
 ├── templates/                  ←放這個app專用的HTML模板
 │   └── blog/
-│       ├── home.html
-│       └── run_mamba.html
+│       ├── _navbar.html        ←導覽列
+│       ├── home.html           ←首頁
+│       ├── model_manage.html   ←管理模型頁面
+│       ├── model_test.html     ←模型測試頁面
+│       ├── model_train.html    ←模型訓練頁面
+│       └── results.html        ←圖片瀏覽頁面
 ├── __init__.py
 ├── admin.py                    ←將資料表註冊到後台管理
 ├── apps.py                     ←註冊app的設定資料
