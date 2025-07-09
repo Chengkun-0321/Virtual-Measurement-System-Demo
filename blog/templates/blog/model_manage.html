@@ -7,16 +7,48 @@
 </head>
 <body class="d-flex flex-column min-vh-100">
     {% include "blog/_navbar.html" %}
-
     <div class="container">
         <br>
-        <h2 class="mb-4 text-center">🧠 模型管理頁面</h2>
+        <!-- 頁面標題 -->
+        <h2 class="mb-4 text-center">模型管理頁面</h2>
 
         <!-- SSH 連線提示 -->
         <div id="ssh-status" class="text-center mb-3"></div>
 
-        <div class="card p-4 shadow-sm fs-5">
-            <ul id="model-list" class="list-group"></ul>
+        <!-- 權重管理區塊 -->
+        <div class="card mt-4 shadow-sm">
+            <div class="card-header">
+                🗂️ 模型權重管理
+            </div>
+            <div class="card-body">
+                <table class="table table-bordered" id="weights-table">
+                    <thead>
+                        <tr>
+                            <th><input type="checkbox" id="select-all"></th>
+                            <th>檔名</th>
+                            <th>檔案大小</th>
+                            <th>建立時間</th>
+                            <th>MSE</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td colspan="5" class="text-center text-muted">📂 載入中...</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <button class="btn btn-danger" id="delete-selected">🗑️ 刪除選擇</button>
+            </div>
+        </div>
+
+        <!-- 執行結果區塊 -->
+        <div class="card mt-5 shadow-sm" id="output-card" style="display:none;">
+            <div class="card-header">
+                📤 執行結果
+            </div>
+            <div class="card-body">
+                <textarea id="output" class="form-control bg-light" rows="15" style="resize: none;" readonly></textarea>
+            </div>
         </div>
 
         <!-- 返回首頁按鈕 -->
@@ -27,68 +59,103 @@
 
     <script>
         document.addEventListener("DOMContentLoaded", function() {
+            const runTestButton = document.getElementById('run-test');
             const sshStatus = document.getElementById('ssh-status');
-            const modelList = document.getElementById('model-list');
-
+            const outputArea = document.getElementById('output');
+            const resultCard = outputArea.closest('.card');
+            
+            // 頁面載入時與伺服器連線動作
             const socket = new WebSocket("ws://" + window.location.host + "/ws/CMD/");
-
             socket.onopen = function() {
-                sshStatus.innerHTML = `<span class="text-warning fw-bold">🟡 正在連接 SSH...</span>`;
+                console.log("WebSocket 已連線，正在嘗試 SSH...");
+                sshStatus.innerHTML = `<span class="text-warning fw-bold">🟡 伺服器 正在連接中...</span>`;
+
                 socket.send(JSON.stringify({
-                    action: "ssh_connect",
-                    hostname: "{{ request.session.hostname }}",
-                    port: "{{ request.session.port }}",
-                    username: "{{ request.session.username }}",
-                    password: "{{ request.session.password }}"
+                    action: 'ssh_connect',
+                    hostname: "{{ request.session.ssh_info.hostname }}",
+                    port: "{{ request.session.ssh_info.port }}",
+                    username: "{{ request.session.ssh_info.username }}",
+                    password: "{{ request.session.ssh_info.password }}"
                 }));
             };
 
-            socket.onmessage = function(e) {
-                const data = JSON.parse(e.data);
+            socket.onmessage = function(event) {
+                const data = event.data;
 
-                if (data.type === 'ssh_status') {
-                    if (data.status === 'success') {
-                        sshStatus.innerHTML = `<span class="text-success fw-bold">🟢 SSH 已連線</span>`;
-                        socket.send(JSON.stringify({ action: "list-models" }));
-                    } else {
-                        sshStatus.innerHTML = `<span class="text-danger fw-bold">🔴 SSH 連線失敗</span>`;
-                    }
+                // 顯示 顯示伺服器成功/失敗
+                if (data.includes("SSH connected")) {
+                    sshStatus.innerHTML = `<span class="text-success fw-bold">🟢 伺服器 已連線</span>`;
+                } else if (data.includes("SSH failed") || data.includes("SSH connection error")) {
+                    sshStatus.innerHTML = `<span class="text-danger fw-bold">🔴 伺服器 連線失敗</span>`;
                 }
 
-                if (data.type === 'model_list') {
-                    modelList.innerHTML = "";
-                    if (data.status === 'success') {
-                        data.files.forEach(file => {
-                            const li = document.createElement("li");
-                            li.className = "list-group-item d-flex justify-content-between align-items-center";
-                            li.innerHTML = `
-                                <span>${file}</span>
-                                <button class="btn btn-danger btn-sm" onclick="deleteModel('${file}')">🗑 刪除</button>
+                // 顯示測試輸出內容
+                outputArea.value += data + "\n";
+                outputArea.scrollTop = outputArea.scrollHeight;
+            };
+            const tableBody = document.querySelector("#weights-table tbody");
+            const selectAllCheckbox = document.getElementById("select-all");
+            const deleteButton = document.getElementById("delete-selected");
+
+            function loadWeights() {
+                fetch('/api/list_checkpoint/')
+                    .then(res => res.json())
+                    .then(data => {
+                        console.log("載入權重資料:", data); // DEBUG: 看 API 回傳
+                        tableBody.innerHTML = "";
+                        if (data.length === 0) {
+                            tableBody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">📂 沒有權重檔案</td></tr>';
+                            return;
+                        }
+
+                        data.forEach(file => {
+                            const row = document.createElement("tr");
+                            row.innerHTML = `
+                                <td><input type="checkbox" class="file-checkbox" value="${file.name}"></td>
+                                <td>${file.name}.h5</td>
+                                <td>${file.size}</td>
+                                <td>${file.remote_date}</td>
+                                <td>${file.mse !== null ? file.mse : "-"}</td>
                             `;
-                            modelList.appendChild(li);
+                            tableBody.appendChild(row);
                         });
-                    } else {
-                        modelList.innerHTML = `<li class="list-group-item text-danger">錯誤：${data.message}</li>`;
-                    }
-                }
+                    });
+            }
 
-                if (data.type === 'delete_result') {
-                    if (data.status === 'success') {
-                        socket.send(JSON.stringify({ action: "list-models" }));
-                    } else {
-                        alert("刪除失敗: " + data.message);
-                    }
-                }
-            };
+            // 全選 / 取消全選
+            selectAllCheckbox.addEventListener("change", function () {
+                document.querySelectorAll(".file-checkbox").forEach(cb => {
+                    cb.checked = selectAllCheckbox.checked;
+                });
+            });
 
-            window.deleteModel = function(filename) {
-                if (confirm(`確定要刪除模型 ${filename} 嗎？`)) {
-                    socket.send(JSON.stringify({
-                        action: "delete-model",
-                        filename: filename
-                    }));
+            // 刪除選擇檔案
+            deleteButton.addEventListener("click", function () {
+                const selectedFiles = Array.from(document.querySelectorAll(".file-checkbox:checked"))
+                    .map(cb => cb.value);
+                if (selectedFiles.length === 0) {
+                    alert("請先選擇要刪除的檔案！");
+                    return;
                 }
-            };
+                if (confirm(`⚠️ 確定要刪除這 ${selectedFiles.length} 個檔案嗎？`)) {
+                    fetch('/api/delete_remote_weights/', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ filenames: selectedFiles })
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.status === "success") {
+                            alert("✅ 刪除成功");
+                            loadWeights();
+                        } else {
+                            alert(`❌ 刪除失敗：${data.error}`);
+                        }
+                    });
+                }
+            });
+
+            loadWeights(); // 頁面載入時呼叫
         });
     </script>
 </body>
